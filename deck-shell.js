@@ -1,7 +1,7 @@
 /* ============================================================
- deck-shell.js v5.1.5 -- UI Shell & PPTX Export
+ deck-shell.js v6.0.0-dev -- UI Shell & PPTX Export
  Depends on: standard-deck.js, deck-layouts.js, pptxgen.bundle.js
- v5.1.5: Fixed logo invert logic — inverted used on opposite bg
+ Phase 2A: Background picker, Pantone PPTX masters, footer config
  ============================================================ */
 
 (function () {
@@ -87,22 +87,34 @@ var css = [
 
   '.sd-color-picker {',
   '  display: none;',
-  '  flex-wrap: wrap;',
-  '  gap: 6px;',
+  '  flex-direction: column;',
+  '  gap: 10px;',
   '  position: absolute;',
   '  top: 100%;',
   '  right: 0;',
   '  margin-top: 8px;',
-  '  padding: 12px;',
+  '  padding: 14px;',
   '  background: #191919;',
   '  border: 1px solid #363732;',
   '  border-radius: 6px;',
   '  z-index: 1100;',
-  '  min-width: 220px;',
+  '  min-width: 240px;',
+  '}',
+  '.sd-picker-label {',
+  '  font-size: 10px;',
+  '  text-transform: uppercase;',
+  '  letter-spacing: 0.08em;',
+  '  color: #8B8C81;',
+  '  margin-bottom: 4px;',
+  '}',
+  '.sd-swatch-row {',
+  '  display: flex;',
+  '  flex-wrap: wrap;',
+  '  gap: 6px;',
   '}',
   '.sd-swatch {',
-  '  width: 36px;',
-  '  height: 36px;',
+  '  width: 30px;',
+  '  height: 30px;',
   '  border-radius: 6px;',
   '  cursor: pointer;',
   '  border: 3px solid transparent;',
@@ -110,12 +122,25 @@ var css = [
   '}',
   '.sd-swatch:hover { transform: scale(1.1); }',
   '.sd-swatch.active { border-color: #FFFFFF; }',
+  '.sd-bg-btn {',
+  '  padding: 5px 10px;',
+  '  border-radius: 4px;',
+  '  cursor: pointer;',
+  '  border: 2px solid transparent;',
+  '  font-size: 11px;',
+  '  font-family: DM Sans, sans-serif;',
+  '  transition: border-color 0.2s;',
+  '}',
+  '.sd-bg-btn.active { border-color: #FFFFFF; }',
+  '.sd-bg-btn:hover { border-color: #8B8C81; }',
+  '.sd-picker-divider {',
+  '  height: 1px;',
+  '  background: #363732;',
+  '}',
   '.sd-hex-row {',
   '  display: flex;',
   '  align-items: center;',
   '  gap: 6px;',
-  '  margin-top: 8px;',
-  '  width: 100%;',
   '}',
   '.sd-hex-row input {',
   '  background: #2a2a2a;',
@@ -295,7 +320,7 @@ toolbar.innerHTML = [
   '  <button class="sd-btn sd-next" title="Next slide">&#9654;</button>',
   '</div>',
   '<div class="sd-toolbar-right">',
-  '  <button class="sd-btn sd-color-btn" title="Change Color">&#127912; Color</button>',
+  '  <button class="sd-btn sd-color-btn" title="Color & Background">&#127912; Color</button>',
   '  <button class="sd-btn sd-notes-btn" title="Toggle Notes">&#128221; Notes</button>',
   '  <button class="sd-btn sd-logo-btn" title="Upload Logo">&#128444; Logo</button>',
   '  <button class="sd-btn sd-btn-download sd-download-btn" title="Download PPTX">&#11015; Download</button>',
@@ -319,12 +344,21 @@ return toolbar;
 }
 
 // ============================================================
-// COLOR PICKER
+// V6.0: COLOR & BACKGROUND PICKER
 // ============================================================
 
 function buildColorPicker(toolbarRight) {
 var picker = document.createElement('div');
 picker.className = 'sd-color-picker';
+
+// --- Accent row ---
+var accentLabel = document.createElement('div');
+accentLabel.className = 'sd-picker-label';
+accentLabel.textContent = 'Accent Color';
+picker.appendChild(accentLabel);
+
+var accentRow = document.createElement('div');
+accentRow.className = 'sd-swatch-row';
 
 var families = SD.ACCENT_FAMILIES;
 var currentAccent = SD.getAccent().mid;
@@ -340,13 +374,58 @@ Object.keys(families).forEach(function (name) {
     applyColorFamily(name);
     picker.style.display = 'none';
   });
-  picker.appendChild(swatch);
+  accentRow.appendChild(swatch);
 });
+picker.appendChild(accentRow);
 
+// --- Divider ---
+var div1 = document.createElement('div');
+div1.className = 'sd-picker-divider';
+picker.appendChild(div1);
+
+// --- V6.0: Background mode row ---
+var bgLabel = document.createElement('div');
+bgLabel.className = 'sd-picker-label';
+bgLabel.textContent = 'Background';
+picker.appendChild(bgLabel);
+
+var bgRow = document.createElement('div');
+bgRow.className = 'sd-swatch-row';
+
+var bgModes = [
+  { name: 'standard', label: 'Standard', lightBg: '#F5F5F5', darkBg: '#191919' },
+  { name: 'brand',    label: 'Brand',    lightBg: '#F5F1EB', darkBg: '#191919' },
+  { name: 'deep',     label: 'Deep',     lightBg: '#F5F5F5', darkBg: '#12171F' }
+];
+
+var currentBg = SD.getBgMode();
+
+bgModes.forEach(function (mode) {
+  var btn = document.createElement('button');
+  btn.className = 'sd-bg-btn' + (mode.name === currentBg ? ' active' : '');
+  btn.setAttribute('data-bgmode', mode.name);
+  btn.style.background = 'linear-gradient(135deg, ' + mode.lightBg + ' 50%, ' + mode.darkBg + ' 50%)';
+  btn.style.color = '#F5F5F5';
+  btn.title = mode.label + ' (' + mode.lightBg + ' / ' + mode.darkBg + ')';
+  btn.textContent = mode.label;
+  btn.addEventListener('click', function () {
+    applyBgMode(mode.name);
+    picker.style.display = 'none';
+  });
+  bgRow.appendChild(btn);
+});
+picker.appendChild(bgRow);
+
+// --- Divider ---
+var div2 = document.createElement('div');
+div2.className = 'sd-picker-divider';
+picker.appendChild(div2);
+
+// --- Hex input ---
 var hexRow = document.createElement('div');
 hexRow.className = 'sd-hex-row';
 hexRow.innerHTML = [
-  '<input type="text" class="sd-hex-input" placeholder="#D50032" maxlength="7">',
+  '<input type="text" class="sd-hex-input" placeholder="#8E1C2E" maxlength="7">',
   '<button class="sd-hex-apply">Apply</button>',
   '<button class="sd-hex-reset">Reset</button>'
 ].join('');
@@ -366,6 +445,7 @@ hexRow.querySelector('.sd-hex-apply').addEventListener('click', function () {
 });
 hexRow.querySelector('.sd-hex-reset').addEventListener('click', function () {
   SD.setAccent('red');
+  SD.setBgMode('standard');
   rerenderAll();
   updateSwatchStates();
   hexRow.querySelector('.sd-hex-input').value = '';
@@ -381,10 +461,21 @@ rerenderAll();
 updateSwatchStates();
 }
 
+// V6.0: Background mode switching
+function applyBgMode(mode) {
+SD.setBgMode(mode);
+rerenderAll();
+updateSwatchStates();
+}
+
 function updateSwatchStates() {
 var current = SD.getAccent().name;
 document.querySelectorAll('.sd-swatch').forEach(function (s) {
   s.classList.toggle('active', s.getAttribute('data-family') === current);
+});
+var currentBg = SD.getBgMode();
+document.querySelectorAll('.sd-bg-btn').forEach(function (b) {
+  b.classList.toggle('active', b.getAttribute('data-bgmode') === currentBg);
 });
 var toolbar = document.querySelector('.sd-toolbar');
 if (toolbar) {
@@ -443,7 +534,6 @@ panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 
 // ============================================================
 // LOGO MANAGER
-// v5.1.5: Fixed invert logic — inverted goes on OPPOSITE bg
 // ============================================================
 
 function buildLogoPanel(container) {
@@ -486,7 +576,6 @@ panel.querySelector('.sd-logo-upload').addEventListener('click', function () {
   panel.querySelector('.sd-logo-file').click();
 });
 
-// Pixel-level inversion for cross-browser support
 panel.querySelector('.sd-logo-file').addEventListener('change', function (e) {
   var file = e.target.files[0];
   if (!file) return;
@@ -506,8 +595,7 @@ panel.querySelector('.sd-logo-file').addEventListener('change', function (e) {
       invertCanvas.height = tempImg.naturalHeight;
       var ictx = invertCanvas.getContext('2d');
       ictx.drawImage(tempImg, 0, 0);
-      var imageData = ictx.getImageData(
-        0, 0, invertCanvas.width, invertCanvas.height);
+      var imageData = ictx.getImageData(0, 0, invertCanvas.width, invertCanvas.height);
       var pixels = imageData.data;
       for (var p = 0; p < pixels.length; p += 4) {
         pixels[p]     = 255 - pixels[p];
@@ -555,15 +643,11 @@ panel.querySelector('.sd-logo-remove').addEventListener('click', function () {
 return panel;
 }
 
-// v5.1.5 FIX: Original on dark slides, inverted on light slides
-// Works for both white-on-transparent AND dark logos
 function applyLogoToSlides() {
 removeLogoFromSlides();
-var slides = document.querySelectorAll(
-  '#sd-viewport .slide, #sw .sf');
+var slides = document.querySelectorAll('#sd-viewport .slide, #sw .sf');
 slides.forEach(function (slide, i) {
   var isDark = _D[i] && _D[i].dark;
-  // Original stays on dark bg, inverted goes on light bg
   var logoSrc = isDark
     ? _customLogo.src
     : _customLogo.srcInverted;
@@ -676,7 +760,7 @@ if (_customLogo) applyLogoToSlides();
 }
 
 // ============================================================
-// PPTX EXPORT
+// V6.0: PPTX EXPORT — bgMode-aware masters
 // ============================================================
 
 function exportPPTX() {
@@ -706,15 +790,20 @@ try {
   pptx.subject = _config.title || 'Presentation';
 
   var accent = SD.getAccent();
-  var dateStr = SD.getFooterDate();
+  var footerText = SD.getFooterText();
+  var bgMode = SD.getBgMode();
+
+  // V6.0: Background colors based on mode
+  var darkBgColor = bgMode === 'deep' ? '12171F' : '191919';
+  var lightBgColor = bgMode === 'brand' ? 'F5F1EB' : 'F5F5F5';
 
   pptx.defineSlideMaster({
     title: 'SD_DARK',
-    background: { color: '191919' },
+    background: { color: darkBgColor },
     objects: [
       { rect: { x: 0, y: 0, w: 0.06, h: 7.5,
         fill: { color: accent.mid.replace('#', '') } } },
-      { text: { text: dateStr, options: {
+      { text: { text: footerText, options: {
         x: 0.3, y: 7.05, w: 4, h: 0.3,
         fontSize: 9, fontFace: FONT, color: '8B8C81',
         bold: true, letterSpacing: 1.5
@@ -724,11 +813,11 @@ try {
 
   pptx.defineSlideMaster({
     title: 'SD_LIGHT',
-    background: { color: 'F5F5F5' },
+    background: { color: lightBgColor },
     objects: [
       { rect: { x: 0, y: 0, w: 0.06, h: 7.5,
         fill: { color: accent.mid.replace('#', '') } } },
-      { text: { text: dateStr, options: {
+      { text: { text: footerText, options: {
         x: 0.3, y: 7.05, w: 4, h: 0.3,
         fontSize: 9, fontFace: FONT, color: '53544A',
         bold: true, letterSpacing: 1.5
@@ -771,7 +860,6 @@ try {
 
     if (slideData.notes) slide.addNotes(slideData.notes);
 
-    // v5.1.5 FIX: Original on dark, inverted on light
     if (_customLogo && !_noLogo) {
       var logoSrc = isDark
         ? _customLogo.src
@@ -932,9 +1020,20 @@ var chartTypeMap = {
 };
 var pptxType = pptx.charts[chartTypeMap[el.chartType] || 'BAR'];
 var opts = el.opts || {};
-var resolvedColors = (opts.chartColors || ['accent', 'dkGray']).map(function (token) {
-  return SD.colorForPptx(token, isDark);
-});
+
+// V6.0: Use Pantone chart series if no custom colors
+var colorTokens = opts.chartColors || null;
+var resolvedColors;
+if (colorTokens) {
+  resolvedColors = colorTokens.map(function (token) {
+    return SD.colorForPptx(token, isDark);
+  });
+} else {
+  resolvedColors = SD.CHART_SERIES.map(function (hex) {
+    return hex.replace('#', '');
+  });
+}
+
 var chartOpts = {
   x: el.x, y: el.y, w: el.w, h: el.h,
   chartColors: resolvedColors,
@@ -1033,7 +1132,7 @@ return title.replace(/[^a-zA-Z0-9\s_-]/g, '').replace(/\s+/g, '_').substring(0, 
 }
 
 // ============================================================
-// deckInit()
+// V6.0: deckInit — bgMode auto-detect + footer config
 // ============================================================
 
 function deckInit(config) {
@@ -1046,10 +1145,23 @@ _imageMode = !!config.imageMode;
 
 injectStyles();
 
+// V6.0: Accent color
 if (config.accent) {
   SD.setAccent(config.accent);
 } else if (window.AH) {
   SD.setAccent(window.AH, window.AL, window.AD);
+}
+
+// V6.0: Background mode — explicit or auto-detect
+if (config.bgMode) {
+  SD.setBgMode(config.bgMode);
+} else {
+  SD.setBgMode(SD.detectBgMode(config.title));
+}
+
+// V6.0: Footer config
+if (config.footer) {
+  SD.setFooter(config.footer);
 }
 
 window._deckTitle = config.title || 'Presentation';

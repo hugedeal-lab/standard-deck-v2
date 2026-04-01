@@ -1,7 +1,7 @@
 /* ============================================================
- standard-deck.js v5.1.3 -- Core Rendering Engine
+ standard-deck.js v6.0.0-dev -- Core Rendering Engine
  Standard Presentation Builder
- Phase 1.5: Footer redesign, text alignment, icon centering
+ Phase 2A: Pantone colors, background modes, cream/deep
  ============================================================ */
 
 (function () {
@@ -16,7 +16,7 @@ var SY       = CANVAS_H / SLIDE_H;
 var PT_PX    = SY / 72;
 
 // ============================================================
-// V5.1.1 LAYOUT CONSTANTS
+// V6.0 LAYOUT CONSTANTS
 // ============================================================
 
 var SD_CONST = {
@@ -62,27 +62,48 @@ var SAFE = {
   y2: SD_CONST.SAFE_Y_MAX
 };
 
+// ============================================================
+// V6.0: PANTONE-ALIGNED PALETTE
+// ============================================================
+
 var PALETTE = {
-  black:  '#191919', white:  '#F5F5F5',
-  dkGray: '#363732', mdGray: '#53544A',
-  gray:   '#8B8C81', ltGray: '#C2C4B8',
-  ok:     '#28A745', warn:   '#E67E00', bad: '#C12638'
+  // Core neutrals
+  black:     '#191919',
+  deepBlack: '#12171F',   // NEW — deep bg option
+  white:     '#F5F5F5',
+  cream:     '#F5F1EB',   // NEW — warm light bg
+  dkGray:    '#363732',
+  mdGray:    '#53544A',
+  gray:      '#8B8C81',
+  ltGray:    '#C2C4B8',
+  // Status
+  ok:        '#28A745',
+  warn:      '#E67E00',
+  bad:       '#C12638'
 };
 
+// V6.0: Pantone-derived accent families
 var ACCENT_FAMILIES = {
-  red:      { light: '#F4A0A0', mid: '#D50032', dark: '#8B0021' },
-  blue:     { light: '#98AAAF', mid: '#1B3D6D', dark: '#0F2440' },
-  gold:     { light: '#F9D28C', mid: '#C4962C', dark: '#8B6A00' },
-  green:    { light: '#B5BF9B', mid: '#2E5A3A', dark: '#1A3622' },
-  plum:     { light: '#B1A0B0', mid: '#6B3065', dark: '#3F1A3B' },
-  teal:     { light: '#9ECFCF', mid: '#1A7A7A', dark: '#0F4E4E' },
-  charcoal: { light: '#C2C4B8', mid: '#53544A', dark: '#363732' }
+  red:      { light: '#E5D0C9', mid: '#8E1C2E', dark: '#5C1220' },  // Pantone 208 C
+  navy:     { light: '#C4C6D0', mid: '#002544', dark: '#001830' },  // Pantone 2955 C
+  green:    { light: '#CACEC7', mid: '#00412E', dark: '#002B1E' },  // Pantone 7729 C
+  plum:     { light: '#D4C8D1', mid: '#4B1848', dark: '#2F0F2E' },  // Pantone 7665 C
+  gold:     { light: '#F9D28C', mid: '#C4962C', dark: '#8B6A00' },  // unchanged
+  teal:     { light: '#9ECFCF', mid: '#1A7A7A', dark: '#0F4E4E' },  // unchanged
+  charcoal: { light: '#C2C4B8', mid: '#53544A', dark: '#363732' }   // unchanged
 };
 
-var _accentLight = '#F4A0A0';
-var _accentMid   = '#D50032';
-var _accentDark  = '#8B0021';
+// V6.0: Chart series colors (Pantone 100% tints)
+var CHART_SERIES = ['#8E1C2E', '#002544', '#00412E', '#4B1848', '#000000'];
+var CHART_SERIES_LIGHT = ['#B67367', '#5A657E', '#627967', '#89657F', '#888888'];
+
+var _accentLight = '#E5D0C9';
+var _accentMid   = '#8E1C2E';
+var _accentDark  = '#5C1220';
 var _familyName  = 'red';
+
+// V6.0: Background mode
+var _bgMode = 'standard';  // 'standard' | 'brand' | 'deep'
 
 var FONT_MAP = {
   H: { face: 'Mazda Type, Classico URW, Montserrat, sans-serif', weight: 700 },
@@ -103,7 +124,7 @@ var MIN_SIZES = {
 };
 
 // ============================================================
-// V5.1.3: DATE GENERATION
+// V6.0: DATE GENERATION
 // ============================================================
 
 var MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY',
@@ -116,7 +137,7 @@ function getFooterDate() {
 }
 
 // ============================================================
-// COLOR RESOLUTION
+// V6.0: COLOR RESOLUTION (bgMode-aware)
 // ============================================================
 
 function resolveColor(token, isDark) {
@@ -131,9 +152,15 @@ function resolveColor(token, isDark) {
     accentDk:   _accentDark,
     cardBg:     isDark ? PALETTE.dkGray   : '#FFFFFF',
     cardBorder: isDark ? 'transparent'    : PALETTE.ltGray,
-    slideBg:    isDark ? PALETTE.black    : PALETTE.white,
+    // V6.0: Background mode affects slideBg
+    slideBg:    isDark
+      ? (_bgMode === 'deep' ? PALETTE.deepBlack : PALETTE.black)
+      : (_bgMode === 'brand' ? PALETTE.cream : PALETTE.white),
     white:      '#FFFFFF',
-    black:      '#000000'
+    black:      '#000000',
+    // NEW tokens for direct access
+    cream:      PALETTE.cream,
+    deepBlack:  PALETTE.deepBlack
   };
   if (semantics[token]) return semantics[token];
   if (PALETTE[token]) return PALETTE[token];
@@ -145,6 +172,31 @@ function colorForPptx(token, isDark) {
 }
 
 // ============================================================
+// V6.0: BACKGROUND MODE
+// ============================================================
+
+function setBgMode(mode) {
+  if (['standard', 'brand', 'deep'].indexOf(mode) > -1) {
+    _bgMode = mode;
+  }
+}
+
+function getBgMode() {
+  return _bgMode;
+}
+
+function detectBgMode(title) {
+  var t = (title || '').toLowerCase();
+  if (/brand|messaging|positioning|portfolio|move and be moved|campaign|creative/.test(t)) {
+    return 'brand';
+  }
+  if (/ai|technical|strategy|digital|platform|cdp|summit|engineering/.test(t)) {
+    return 'deep';
+  }
+  return 'standard';
+}
+
+// ============================================================
 // COORDINATE CONVERSION
 // ============================================================
 
@@ -153,7 +205,7 @@ function toY(inches) { return Math.round(inches * SY); }
 function ptToPx(pt)  { return Math.round(pt * PT_PX); }
 
 // ============================================================
-// V5.1.1 TITLE HEIGHT DETECTION
+// TITLE HEIGHT DETECTION
 // ============================================================
 
 function getTitleMetrics(title) {
@@ -171,7 +223,7 @@ function getTitleMetrics(title) {
 }
 
 // ============================================================
-// V5.1.1 SAFE AREA VALIDATION
+// SAFE AREA VALIDATION
 // ============================================================
 
 function validatePosition(el, slideIndex) {
@@ -303,8 +355,6 @@ function renderElement(el, isDark) {
   return fn(el, isDark);
 }
 
-// PHASE 1 FIX: overflow:visible for titles
-// PHASE 1.5 FIX: textAlign support + compact auto-center
 function renderText(el, isDark) {
   var div = document.createElement('div');
   var isTitle = (el.size >= 30);
@@ -322,7 +372,6 @@ function renderText(el, isDark) {
   if (el.bold) div.style.fontWeight = 700;
   if (el.italic) div.style.fontStyle = 'italic';
 
-  // PHASE 1.5: Text alignment with compact auto-center
   var isCompact = el.w <= 0.80 && el.h <= 0.80;
   div.style.textAlign = el.align || (isCompact ? 'center' : 'left');
 
@@ -330,7 +379,6 @@ function renderText(el, isDark) {
     div.style.display = 'flex';
     div.style.flexDirection = 'column';
     div.style.justifyContent = el.valign === 'middle' ? 'center' : 'flex-end';
-    // Preserve textAlign inside flex container
     if (isCompact || el.align === 'center') {
       div.style.alignItems = 'center';
     }
@@ -371,7 +419,6 @@ function renderOval(el, isDark) {
   return div;
 }
 
-// PHASE 1.5 FIX: Reduced scale 0.6→0.5, added line-height:1
 function renderIcon(el) {
   var div = document.createElement('div');
   div.style.cssText = 'position:absolute;display:flex;align-items:center;justify-content:center;line-height:1;';
@@ -475,7 +522,8 @@ function renderBarChart(ctx, data, opts, cw, ch, isDark) {
   var groupW   = plotW / nGroups;
   var barW     = (groupW * 0.7) / nSeries;
   var gap      = groupW * 0.3;
-  var colors = resolveChartColors(opts.chartColors || ['accent', 'dkGray'], nSeries, isDark);
+  // V6.0: Use Pantone chart series if no custom colors
+  var colors = resolveChartColors(opts.chartColors || null, nSeries, isDark);
   series.forEach(function (s, si) {
     s.values.forEach(function (val, vi) {
       var bx = padding.left + vi * groupW + gap / 2 + si * barW;
@@ -515,7 +563,7 @@ function renderLineChart(ctx, data, opts, cw, ch, isDark, isArea) {
   var padding = { top: 60, right: 40, bottom: 50, left: 60 };
   var plotW   = cw - padding.left - padding.right;
   var plotH   = ch - padding.top - padding.bottom;
-  var colors = resolveChartColors(opts.chartColors || ['accent', 'dkGray'], series.length, isDark);
+  var colors = resolveChartColors(opts.chartColors || null, series.length, isDark);
   series.forEach(function (s, si) {
     ctx.beginPath();
     ctx.strokeStyle = colors[si];
@@ -564,7 +612,7 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
   var cy     = ch / 2;
   var radius = Math.min(cw, ch) * 0.35;
   var hole   = isDoughnut ? radius * ((opts.holeSize || 70) / 100) : 0;
-  var colors = resolveChartColors(opts.chartColors || ['accent', 'dkGray', 'ltGray', 'gray', 'ok', 'warn', 'bad', 'mdGray'], values.length, isDark);
+  var colors = resolveChartColors(opts.chartColors || null, values.length, isDark);
   var startAngle = -Math.PI / 2;
   values.forEach(function (val, i) {
     var sliceAngle = (val / total) * Math.PI * 2;
@@ -608,11 +656,17 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
   }
 }
 
+// V6.0: Chart color resolution — uses Pantone series by default
 function resolveChartColors(tokens, count, isDark) {
   var colors = [];
   for (var i = 0; i < count; i++) {
-    var token = tokens[i % tokens.length];
-    colors.push(resolveColor(token, isDark));
+    if (tokens && tokens[i % tokens.length]) {
+      var token = tokens[i % tokens.length];
+      colors.push(resolveColor(token, isDark));
+    } else {
+      // Default to Pantone chart series
+      colors.push(CHART_SERIES[i % CHART_SERIES.length]);
+    }
   }
   return colors;
 }
@@ -687,7 +741,6 @@ function renderImage(el) {
 
 // ============================================================
 // SLIDE RENDERING
-// V5.1.3: New footer — date left, number+logo+divider right
 // ============================================================
 
 function renderSlide(slideData, index) {
@@ -696,13 +749,11 @@ function renderSlide(slideData, index) {
   slide.className = 'slide' + (index === 0 ? ' active' : '');
   slide.style.cssText = 'position:absolute;top:0;left:0;width:1920px;height:1200px;overflow:hidden;background:' + resolveColor('slideBg', isDark) + ';';
 
-  // Brand bar (left edge)
   var brandBar = document.createElement('div');
   brandBar.style.cssText = 'position:absolute;left:0;top:0;width:8px;height:100%;background:' + resolveColor('accent', isDark) + ';';
   brandBar.setAttribute('data-accent', 'backgroundColor');
   slide.appendChild(brandBar);
 
-  // Render slide content (layouts or raw els)
   var els;
   if (slideData.layout) {
     els = window.DeckLayouts ? window.DeckLayouts.dispatch(slideData) : [];
@@ -715,7 +766,7 @@ function renderSlide(slideData, index) {
     slide.appendChild(renderElement(el, isDark));
   });
 
-  // PHASE 1.5: Bottom-left date (replaces "Confidential")
+  // Footer: date bottom-left
   var mutedColor = resolveColor('muted', isDark);
   var dateDiv = document.createElement('div');
   dateDiv.style.cssText = 'position:absolute;bottom:24px;left:40px;'
@@ -725,28 +776,25 @@ function renderSlide(slideData, index) {
     + 'text-transform:uppercase;'
     + 'color:' + mutedColor + ';'
     + 'font-family:DM Sans,sans-serif;';
-  dateDiv.textContent = getFooterDate();
+  dateDiv.textContent = _footerText || getFooterDate();
   slide.appendChild(dateDiv);
 
-  // PHASE 1.5: Bottom-right number + logo slot + divider
+  // Footer: number + logo slot + divider (bottom-right)
   if (slideData.num) {
     var footerRight = document.createElement('div');
     footerRight.style.cssText = 'position:absolute;bottom:24px;'
       + 'right:40px;display:flex;align-items:center;gap:12px;'
       + 'font-family:DM Sans,sans-serif;';
 
-    // Logo slot (populated by applyLogoToSlides when user uploads)
     var logoSlot = document.createElement('div');
     logoSlot.className = 'logo-footer-slot';
     logoSlot.style.cssText = 'display:flex;align-items:center;';
     footerRight.appendChild(logoSlot);
 
-    // Thin vertical divider
     var divLine = document.createElement('div');
     divLine.style.cssText = 'width:1px;height:20px;background:' + mutedColor + ';';
     footerRight.appendChild(divLine);
 
-    // Slide number
     var numSpan = document.createElement('span');
     numSpan.style.cssText = 'font-size:' + ptToPx(10) + 'px;'
       + 'font-weight:600;color:' + mutedColor + ';';
@@ -795,6 +843,26 @@ function adjustBrightness(hex, amount) {
 }
 
 // ============================================================
+// V6.0: CONFIGURABLE FOOTER
+// ============================================================
+
+var _footerText = null;  // null = use date, string = custom text
+
+function setFooter(text) {
+  if (text === 'confidential') {
+    _footerText = 'S T R I C T L Y   C O N F I D E N T I A L';
+  } else if (text === 'date' || text === null) {
+    _footerText = null;  // reverts to auto date
+  } else {
+    _footerText = text;
+  }
+}
+
+function getFooterText() {
+  return _footerText || getFooterDate();
+}
+
+// ============================================================
 // PPTX EXPORT -- SAFE AREA
 // ============================================================
 
@@ -816,6 +884,11 @@ window.StandardDeck = {
   resolveColor:     resolveColor,
   colorForPptx:     colorForPptx,
   setAccent:        setAccent,
+  setBgMode:        setBgMode,
+  getBgMode:        getBgMode,
+  detectBgMode:     detectBgMode,
+  setFooter:        setFooter,
+  getFooterText:    getFooterText,
   validateSlide:    validateSlide,
   validatePosition: validatePosition,
   enforceWidthRule: enforceWidthRule,
@@ -824,6 +897,8 @@ window.StandardDeck = {
   toX: toX, toY: toY, ptToPx: ptToPx,
   PALETTE:          PALETTE,
   ACCENT_FAMILIES:  ACCENT_FAMILIES,
+  CHART_SERIES:     CHART_SERIES,
+  CHART_SERIES_LIGHT: CHART_SERIES_LIGHT,
   FONT_MAP:         FONT_MAP,
   LIMITS:           LIMITS,
   MIN_SIZES:        MIN_SIZES,
