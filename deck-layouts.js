@@ -559,7 +559,7 @@ function layoutCapability(cfg) {
   var dataStartY = startY + headerRowH + C.GAP;
   var rowCount = items.length;
   var dataH = availH - headerRowH - C.GAP;
-  var rowH = rowCount > 0 ? Math.min(0.80, (dataH - C.GAP * (rowCount - 1)) / rowCount) : 0.80;
+	var rowH = rowCount > 0 ? Math.min(0.55, (dataH - C.GAP * (rowCount - 1)) / rowCount) : 0.55;
 
   // Column headers
   columns.forEach(function(colName, ci) {
@@ -571,17 +571,28 @@ function layoutCapability(cfg) {
   });
 
   // Data rows
-  items.forEach(function(row, ri) {
-    var ry = dataStartY + ri * (rowH + C.GAP);
-    var values = row.values || [];
+items.forEach(function(row, ri) {
+	var labelH = 0.28;
+	var cellH = rowH - labelH - 0.05;
+	var ry = dataStartY + ri * (rowH + labelH + C.GAP);
 
-    // Row label on the left as a full-width background
-    els.push({ type: 's', x: C.SAFE_X_MIN, y: ry, w: C.SAFE_W, h: rowH, fill: 'cardBg' });
+// Metric label ABOVE the row (not inside)
+if (row.metric) {
+    els.push({ type: 't', text: row.metric, x: C.SAFE_X_MIN, y: ry, w: 3.00, h: labelH, font: 'H', size: 10, color: 'accent' });
+}
 
-    // Metric label
-    if (row.metric) {
-      els.push({ type: 't', text: row.metric, x: C.SAFE_X_MIN + 0.15, y: ry, w: C.SAFE_W - 0.30, h: 0.25, font: 'H', size: 10, color: 'accent' });
-    }
+var cellY = ry + labelH + 0.05;
+var values = row.values || [];
+
+values.forEach(function(val, vi) {
+    if (vi >= colCount || !grid.cols[vi]) return;
+    var cx = grid.cols[vi].x;
+    var cw = grid.cols[vi].w;
+
+    els.push({ type: 's', x: cx, y: cellY, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
+    els.push({ type: 't', text: val, x: cx + 0.10, y: cellY, w: cw - 0.20, h: cellH, font: 'B', size: 11, color: 'body', valign: 'middle' });
+});
+});
 
     // Values in each column
     values.forEach(function(val, vi) {
@@ -607,7 +618,7 @@ function layoutSchedule(cfg) {
 
   var items = cfg.items || [];
   var availH = C.CONTENT_END - startY;
-  var rowH = Math.min(0.65, (availH - C.GAP * (items.length - 1)) / items.length);
+  var rowH = Math.min(0.80, (availH - C.GAP * 0.5 * (items.length - 1)) / items.length);
 
   // Column widths: Time (2.5"), Activity (6.5"), Who (3.42")
   var timeX = C.SAFE_X_MIN;
