@@ -425,9 +425,10 @@ picker.appendChild(div2);
 var hexRow = document.createElement('div');
 hexRow.className = 'sd-hex-row';
 hexRow.innerHTML = [
-  '<input type="text" class="sd-hex-input" placeholder="#8E1C2E" maxlength="7">',
-  '<button class="sd-hex-apply">Apply</button>',
-  '<button class="sd-hex-reset">Reset</button>'
+'<span style="color:#8B8C81;font-size:10px;margin-right:4px;">Custom:</span>',
+'<input type="text" class="sd-hex-input" placeholder="#8E1C2E" maxlength="7">',
+'<button class="sd-hex-apply">Apply</button>',
+'<button class="sd-hex-reset">Reset All</button>'
 ].join('');
 picker.appendChild(hexRow);
 
@@ -937,11 +938,27 @@ if (fn) fn(slide, el, isDark, accent, pptx);
 
 function exportText(slide, el, isDark) {
 var isCompact = el.w <= 0.80 && el.h <= 0.80;
-slide.addText(el.text || '', {
+var textStyle = SD.getTextStyle(el);
+var exportedText = el.text || '';
+
+// V6.0: L1 spaced caps — PptxGenJS doesn't support letter-spacing,
+// so we pre-process the text with actual spaces between chars
+if (textStyle === 'L1') {
+  exportedText = exportedText.toUpperCase().split('').join(' ')
+    .replace(/ {2}/g, '   ');  // double-space between words
+}
+// L2, L3, L5: just uppercase the text
+if (['L2', 'L3', 'L5'].indexOf(textStyle) > -1) {
+  exportedText = exportedText.toUpperCase();
+}
+
+var ts = SD.TEXT_STYLES[textStyle];
+
+slide.addText(exportedText, {
   x: el.x, y: el.y, w: el.w, h: el.h,
   fontSize: el.size,
   fontFace: FONT,
-  bold: el.font === 'H' || el.bold,
+  bold: ts.weight >= 700 || el.font === 'H' || el.bold,
   italic: !!el.italic,
   color: SD.colorForPptx(el.color || 'body', isDark),
   align: el.align || (isCompact ? 'center' : 'left'),

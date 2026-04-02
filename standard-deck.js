@@ -122,6 +122,52 @@ var MIN_SIZES = {
   subtitle: 18, body: 15, table: 12,
   statValue: 42, tag: 10, footnote: 9
 };
+	
+// ============================================================
+// V6.0: TYPOGRAPHY HIERARCHY (auto-applied)
+// ============================================================
+
+var TEXT_STYLES = {
+  L1: { transform: 'uppercase', spacing: '0.25em', weight: 700 },
+  L2: { transform: 'uppercase', spacing: '0.05em', weight: 700 },
+  L3: { transform: 'uppercase', spacing: '0.08em', weight: 500 },
+  L4: { transform: 'none',      spacing: 'normal', weight: 400 },
+  L5: { transform: 'uppercase', spacing: '0.10em', weight: 400 }
+};
+
+// Track current slide layout for style detection
+var _currentSlideLayout = null;
+
+function getTextStyle(el) {
+  // Manual override takes priority
+  if (el.textStyle && TEXT_STYLES[el.textStyle]) {
+    return el.textStyle;
+  }
+  // Cover/closing/divider titles → L1 (spaced caps)
+  if ((_currentSlideLayout === 'cover' ||
+       _currentSlideLayout === 'closing' ||
+       _currentSlideLayout === 'divider') && el.size >= 36) {
+    return 'L1';
+  }
+  // Content slide titles → L2 (all caps)
+  if (el.size >= 30 && el.font === 'H') {
+    return 'L2';
+  }
+  // Tags (small accent text) → L3
+  if (el.color === 'accent' && el.size <= 14 && el.font === 'H') {
+    return 'L3';
+  }
+  // Subtitles and section headings → L3
+  if (el.size >= 18 && el.size <= 24 && el.font === 'H') {
+    return 'L3';
+  }
+  // Footnotes, muted, very small → L5
+  if (el.size <= 10 || el.color === 'muted') {
+    return 'L5';
+  }
+  // Everything else → L4 (body, no transform)
+  return 'L4';
+}
 
 // ============================================================
 // V6.0: DATE GENERATION
@@ -374,6 +420,13 @@ function renderText(el, isDark) {
 
   var isCompact = el.w <= 0.80 && el.h <= 0.80;
   div.style.textAlign = el.align || (isCompact ? 'center' : 'left');
+
+  // V6.0: Auto-apply typography hierarchy
+  var textStyle = getTextStyle(el);
+  var ts = TEXT_STYLES[textStyle];
+  div.style.textTransform = ts.transform;
+  div.style.letterSpacing = ts.spacing;
+  if (!el.bold) div.style.fontWeight = ts.weight;
 
   if (el.valign === 'middle' || el.valign === 'bottom') {
     div.style.display = 'flex';
@@ -754,6 +807,8 @@ function renderSlide(slideData, index) {
   brandBar.setAttribute('data-accent', 'backgroundColor');
   slide.appendChild(brandBar);
 
+// V6.0: Track layout for text style auto-detection
+  _currentSlideLayout = slideData.layout || null;
   var els;
   if (slideData.layout) {
     els = window.DeckLayouts ? window.DeckLayouts.dispatch(slideData) : [];
@@ -895,6 +950,8 @@ window.StandardDeck = {
   getTitleMetrics:  getTitleMetrics,
   getFooterDate:    getFooterDate,
   toX: toX, toY: toY, ptToPx: ptToPx,
+  TEXT_STYLES:      TEXT_STYLES,
+  getTextStyle:     getTextStyle,
   PALETTE:          PALETTE,
   ACCENT_FAMILIES:  ACCENT_FAMILIES,
   CHART_SERIES:     CHART_SERIES,
