@@ -563,7 +563,7 @@ function layoutCapability(cfg) {
 
   // Column headers
   columns.forEach(function(colName, ci) {
-    if (ci >= colCount) return;
+    if (ci >= colCount || !grid.cols[ci]) return;
     var cx = grid.cols[ci].x;
     var cw = grid.cols[ci].w;
     els.push({ type: 's', x: cx, y: startY, w: cw, h: headerRowH, fill: 'accent' });
@@ -585,7 +585,7 @@ function layoutCapability(cfg) {
 
     // Values in each column
     values.forEach(function(val, vi) {
-      if (vi >= colCount) return;
+      if (vi >= colCount || !grid.cols[vi]) return;
       var cx = grid.cols[vi].x;
       var cw = grid.cols[vi].w;
       els.push({ type: 't', text: val, x: cx + 0.10, y: ry + 0.25, w: cw - 0.20, h: rowH - 0.30, font: 'B', size: 11, color: 'body', valign: 'middle' });
