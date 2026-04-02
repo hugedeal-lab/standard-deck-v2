@@ -802,11 +802,6 @@ function renderSlide(slideData, index) {
   slide.className = 'slide' + (index === 0 ? ' active' : '');
   slide.style.cssText = 'position:absolute;top:0;left:0;width:1920px;height:1200px;overflow:hidden;background:' + resolveColor('slideBg', isDark) + ';';
 
-  var brandBar = document.createElement('div');
-  brandBar.style.cssText = 'position:absolute;left:0;top:0;width:8px;height:100%;background:' + resolveColor('accent', isDark) + ';';
-  brandBar.setAttribute('data-accent', 'backgroundColor');
-  slide.appendChild(brandBar);
-
 // V6.0: Track layout for text style auto-detection
   _currentSlideLayout = slideData.layout || null;
   var els;

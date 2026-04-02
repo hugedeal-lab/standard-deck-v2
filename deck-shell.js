@@ -802,8 +802,6 @@ try {
     title: 'SD_DARK',
     background: { color: darkBgColor },
     objects: [
-      { rect: { x: 0, y: 0, w: 0.06, h: 7.5,
-        fill: { color: accent.mid.replace('#', '') } } },
       { text: { text: footerText, options: {
         x: 0.3, y: 7.05, w: 4, h: 0.3,
         fontSize: 9, fontFace: FONT, color: '8B8C81',
@@ -816,8 +814,6 @@ try {
     title: 'SD_LIGHT',
     background: { color: lightBgColor },
     objects: [
-      { rect: { x: 0, y: 0, w: 0.06, h: 7.5,
-        fill: { color: accent.mid.replace('#', '') } } },
       { text: { text: footerText, options: {
         x: 0.3, y: 7.05, w: 4, h: 0.3,
         fontSize: 9, fontFace: FONT, color: '53544A',

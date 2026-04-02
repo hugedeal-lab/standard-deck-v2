@@ -495,11 +495,11 @@ function layoutFromto(cfg) {
     els.push({ type: 't', text: cfg.description, x: ltx, y: startY + 0.20, w: ltw, h: availH * 0.50, font: 'B', size: 13, color: 'body' });
   }
 
-  // Benefits bar at bottom of left column
+// Benefits bar — outline style for visual distinction
   if (cfg.benefits) {
-    els.push({ type: 's', x: lx, y: startY + availH - 0.80, w: lw, h: 0.60, fill: 'accent' });
-    els.push({ type: 't', text: 'BENEFITS', x: ltx, y: startY + availH - 0.78, w: ltw, h: 0.20, font: 'H', size: 9, color: 'white' });
-    els.push({ type: 't', text: cfg.benefits, x: ltx, y: startY + availH - 0.55, w: ltw, h: 0.30, font: 'B', size: 11, color: 'white', valign: 'middle' });
+    els.push({ type: 's', x: lx, y: startY + availH - 0.80, w: lw, h: 0.60, fill: isDark ? 'dkGray' : 'white', border: 'accent' });
+    els.push({ type: 't', text: 'BENEFITS', x: ltx, y: startY + availH - 0.78, w: ltw, h: 0.20, font: 'H', size: 9, color: 'accent' });
+    els.push({ type: 't', text: cfg.benefits, x: ltx, y: startY + availH - 0.55, w: ltw, h: 0.30, font: 'B', size: 11, color: 'accent', valign: 'middle' });
   }
 
   // Right side: FROM → TO blocks
@@ -654,7 +654,7 @@ function layoutSchedule(cfg) {
 function layoutCoverloc(cfg) {
   var els = [];
 
-  // Organization name at top (L3 style — engine auto-applies)
+  // Organization name at top
   if (cfg.org) {
     els.push({
       type: 't', text: cfg.org, x: C.SAFE_X_MIN, y: C.TAG_Y,
@@ -662,32 +662,33 @@ function layoutCoverloc(cfg) {
     });
   }
 
-  // Main title (large, L1 style — engine auto-applies)
-  var titleY = cfg.org ? 1.50 : C.TITLE_Y;
+  // Main title — large, with room for wrapping
+  var titleY = cfg.org ? 1.30 : C.TITLE_Y;
   els.push({
     type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
-    w: 11.00, h: 0.90, font: 'H', size: 48, color: 'title'
+    w: 11.00, h: 1.20, font: 'H', size: 48, color: 'title'
   });
 
-  // Location (prominent)
+  // Location — clear gap below title
+  var locY = titleY + 1.50;
   if (cfg.location) {
     els.push({
-      type: 't', text: cfg.location, x: C.SAFE_X_MIN, y: titleY + 1.20,
-      w: 11.00, h: 0.50, font: 'H', size: 28, color: 'sub'
+      type: 't', text: cfg.location, x: C.SAFE_X_MIN, y: locY,
+      w: 11.00, h: 0.45, font: 'H', size: 24, color: 'sub'
     });
   }
 
-  // Date
+  // Date — below location
+  var dateY = locY + 0.60;
   if (cfg.date) {
     els.push({
-      type: 't', text: cfg.date, x: C.SAFE_X_MIN, y: titleY + 1.85,
+      type: 't', text: cfg.date, x: C.SAFE_X_MIN, y: dateY,
       w: 11.00, h: 0.35, font: 'B', size: 16, color: 'body'
     });
   }
 
   return els;
 }
-
 // ============================================================
 // LAYOUT DISPATCHER
 // ============================================================
