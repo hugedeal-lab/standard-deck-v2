@@ -63,20 +63,20 @@ var titleLen = (cfg.title || '').length;
 if (cfg.tag) {
   els.push({
     type: 't', text: cfg.tag, x: C.SAFE_X_MIN, y: C.TAG_Y,
-    w: 11.00, h: C.TAG_H, font: 'H', size: 11, color: 'accent'
+    w: 11.00, h: C.TAG_H, font: 'H', size: 11, color: 'accentLt'
   });
 }
 
 var titleY = 2.00;
-// Taller box for longer titles that may wrap
-var titleH = titleLen > 30 ? 1.40 : 1.00;
+// L1 spaced caps expand width ~2x, so even shorter titles wrap
+var titleH = titleLen > 20 ? 1.80 : 1.20;
 els.push({
   type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
   w: 11.00, h: titleH, font: 'H', size: 42, color: 'title'
 });
 
 // Subtitle and date drop below title dynamically
-var subY = titleY + titleH + 0.20;
+var subY = titleY + titleH + 0.15;
 if (cfg.subtitle) {
   els.push({
     type: 't', text: cfg.subtitle, x: C.SAFE_X_MIN, y: subY,
@@ -564,58 +564,61 @@ return els;
 // ============================================================
 
 function layoutCapability(cfg) {
-  var header = renderHeader(cfg);
-  var els = header.els;
-  var startY = header.contentY;
-  var isDark = cfg.dark === 1;
+var header = renderHeader(cfg);
+var els = header.els;
+var startY = header.contentY;
+var isDark = cfg.dark === 1;
 
-  var columns = cfg.columns || [];
-  var items = cfg.items || [];
-  var colCount = columns.length;
-  if (colCount < 2) colCount = 2;
-  if (colCount > 5) colCount = 5;
+var columns = cfg.columns || [];
+var items = cfg.items || [];
+var colCount = columns.length;
+if (colCount < 2) colCount = 2;
+if (colCount > 5) colCount = 5;
 
-  var grid = getGrid(colCount);
-  var availH = C.CONTENT_END - startY;
-  var headerRowH = 0.50;
-  var dataStartY = startY + headerRowH + C.GAP;
-  var rowCount = items.length;
-  var dataH = availH - headerRowH - C.GAP;
-  var rowH = rowCount > 0 ? Math.min(0.50, (dataH - C.GAP * (rowCount - 1)) / (rowCount * 1.5)) : 0.50;
+var grid = getGrid(colCount);
+var availH = C.CONTENT_END - startY;
+var headerRowH = 0.50;
+var dataStartY = startY + headerRowH + C.GAP;
+var rowCount = items.length;
+var dataH = availH - headerRowH - C.GAP;
 
-  // Column headers
-  columns.forEach(function(colName, ci) {
-    if (ci >= colCount || !grid.cols[ci]) return;
-    var cx = grid.cols[ci].x;
-    var cw = grid.cols[ci].w;
-    els.push({ type: 's', x: cx, y: startY, w: cw, h: headerRowH, fill: 'accent' });
-    els.push({ type: 't', text: colName, x: cx + 0.10, y: startY, w: cw - 0.20, h: headerRowH, font: 'H', size: 11, color: 'white', valign: 'middle' });
+// Each row = label + gap + cell. Calculate as one unit.
+var labelH = 0.25;
+var cellPad = 0.05;
+var rowUnit = rowCount > 0 ? (dataH - C.GAP * (rowCount - 1)) / rowCount : 1.00;
+var cellH = Math.max(0.35, rowUnit - labelH - cellPad);
+
+// Column headers
+columns.forEach(function(colName, ci) {
+  if (ci >= colCount || !grid.cols[ci]) return;
+  var cx = grid.cols[ci].x;
+  var cw = grid.cols[ci].w;
+  els.push({ type: 's', x: cx, y: startY, w: cw, h: headerRowH, fill: 'accent' });
+  els.push({ type: 't', text: colName, x: cx + 0.15, y: startY, w: cw - 0.30, h: headerRowH, font: 'H', size: 11, color: 'white', valign: 'middle' });
+});
+
+// Data rows
+items.forEach(function(row, ri) {
+  var ry = dataStartY + ri * (rowUnit + C.GAP);
+
+  // Metric label ABOVE the row
+  if (row.metric) {
+    els.push({ type: 't', text: row.metric, x: C.SAFE_X_MIN, y: ry, w: 3.00, h: labelH, font: 'H', size: 10, color: isDark ? 'accentLt' : 'accent' });
+  }
+
+  var cellY = ry + labelH + cellPad;
+  var values = row.values || [];
+
+  values.forEach(function(val, vi) {
+    if (vi >= colCount || !grid.cols[vi]) return;
+    var cx = grid.cols[vi].x;
+    var cw = grid.cols[vi].w;
+    els.push({ type: 's', x: cx, y: cellY, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
+    els.push({ type: 't', text: val, x: cx + 0.15, y: cellY, w: cw - 0.30, h: cellH, font: 'B', size: 11, color: 'body', valign: 'middle' });
   });
+});
 
-  // Data rows
-  items.forEach(function(row, ri) {
-    var labelH = 0.28;
-    var cellH = rowH - labelH - 0.05;
-    var ry = dataStartY + ri * (rowH + labelH + C.GAP);
-
-    // Metric label ABOVE the row (not inside)
-    if (row.metric) {
-      els.push({ type: 't', text: row.metric, x: C.SAFE_X_MIN, y: ry, w: 3.00, h: labelH, font: 'H', size: 10, color: 'accent' });
-    }
-
-    var cellY = ry + labelH + 0.05;
-    var values = row.values || [];
-
-    values.forEach(function(val, vi) {
-      if (vi >= colCount || !grid.cols[vi]) return;
-      var cx = grid.cols[vi].x;
-      var cw = grid.cols[vi].w;
-      els.push({ type: 's', x: cx, y: cellY, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-      els.push({ type: 't', text: val, x: cx + 0.15, y: cellY, w: cw - 0.30, h: cellH, font: 'B', size: 11, color: 'body', valign: 'middle' });
-    });
-  });
-
-  return els;
+return els;
 }
 
 // ============================================================
