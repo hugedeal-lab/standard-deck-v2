@@ -1015,14 +1015,12 @@ slide.addShape(pptx.shapes.RECTANGLE, {
 }
 
 function exportIcon(slide, el) {
-var fontSize = Math.min(el.w, el.h) * 72 * 0.45;
+var scale = (el.w >= 0.45) ? 0.50 : 0.42;
+var fontSize = Math.min(el.w, el.h) * 72 * scale;
 slide.addText(el.icon || '', {
   x: el.x, y: el.y, w: el.w, h: el.h,
-  fontSize: fontSize,
-  align: 'center',
-  valign: 'middle',
-  margin: [0, 0, 0, 0],
-  lineSpacingMultiple: 1.0
+  fontSize: fontSize, align: 'center', valign: 'middle',
+  margin: [0, 0, 0, 0], lineSpacingMultiple: 1.0
 });
 }
 
