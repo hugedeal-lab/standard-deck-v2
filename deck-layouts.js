@@ -57,39 +57,40 @@ function getGrid(colCount) {
 // ============================================================
 
 function layoutCover(cfg) {
-  var els = [];
-  var metrics = SD.getTitleMetrics(cfg.title);
+var els = [];
+var titleLen = (cfg.title || '').length;
 
-  if (cfg.tag) {
-    els.push({
-      type: 't', text: cfg.tag, x: C.SAFE_X_MIN, y: C.TAG_Y,
-      w: 11.00, h: C.TAG_H, font: 'H', size: 11, color: 'accent'
-    });
-  }
-
-  // Fixed titleY so elements never stack on top of each other
-  var titleY = 2.00;
+if (cfg.tag) {
   els.push({
-    type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
-    w: 11.00, h: 1.20,
-    font: 'H', size: 42, color: 'title'
+    type: 't', text: cfg.tag, x: C.SAFE_X_MIN, y: C.TAG_Y,
+    w: 11.00, h: C.TAG_H, font: 'H', size: 11, color: 'accent'
   });
+}
 
-  var subY = titleY + 1.40;
-  if (cfg.subtitle) {
-    els.push({
-      type: 't', text: cfg.subtitle, x: C.SAFE_X_MIN, y: subY,
-      w: 11.00, h: 0.40, font: 'H', size: 22, color: 'sub'
-    });
-  }
-  var dateY = subY + 0.50;
-  if (cfg.date) {
-    els.push({
-      type: 't', text: cfg.date, x: C.SAFE_X_MIN, y: dateY,
-      w: 11.00, h: 0.30, font: 'B', size: 13, color: 'body'
-    });
-  }
-  return els;
+var titleY = 2.00;
+// Taller box for longer titles that may wrap
+var titleH = titleLen > 30 ? 1.40 : 1.00;
+els.push({
+  type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
+  w: 11.00, h: titleH, font: 'H', size: 42, color: 'title'
+});
+
+// Subtitle and date drop below title dynamically
+var subY = titleY + titleH + 0.20;
+if (cfg.subtitle) {
+  els.push({
+    type: 't', text: cfg.subtitle, x: C.SAFE_X_MIN, y: subY,
+    w: 11.00, h: 0.40, font: 'H', size: 22, color: 'sub'
+  });
+}
+var dateY = subY + (cfg.subtitle ? 0.50 : 0);
+if (cfg.date) {
+  els.push({
+    type: 't', text: cfg.date, x: C.SAFE_X_MIN, y: dateY,
+    w: 11.00, h: 0.30, font: 'B', size: 13, color: 'body'
+  });
+}
+return els;
 }
 
 // ============================================================
@@ -221,7 +222,7 @@ function layoutStats(cfg) {
     var textX = cx + (cw - textW) / 2;
 
     els.push({ type: 's', x: cx, y: cy, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-    els.push({ type: 't', text: item.value, x: textX, y: cy + 0.20, w: textW, h: 0.55, font: 'H', size: 44, color: 'accent' });
+    els.push({ type: 't', text: item.value, x: textX, y: cy + 0.20, w: textW, h: 0.55, font: 'H', size: 44, color: 'accent', textStyle: 'L4' });
     els.push({ type: 't', text: item.label, x: textX, y: cy + 1.00, w: textW, h: 0.25, font: 'H', size: 13, color: 'title' });
     if (item.text) {
       els.push({ type: 't', text: item.text, x: textX, y: cy + 1.30, w: textW, h: cellH - 1.55, font: 'B', size: 11, color: 'body' });
@@ -283,10 +284,10 @@ function layoutMetrics(cfg) {
     }
 
     // SPACING FIX: Value pushed down to cy + 0.55 (was 0.30)
-    els.push({ type: 't', text: item.value, x: textX, y: cy + 0.55, w: itemTextW, h: 0.60, font: 'H', size: valueSize, color: 'title' });
+    els.push({ type: 't', text: item.value, x: textX, y: cy + 0.55, w: itemTextW, h: 0.60, font: 'H', size: valueSize, color: 'title', textStyle: 'L4' });
 
-    // Label pushed down to cy + 1.30 (was 1.05)
-    els.push({ type: 't', text: item.label, x: textX, y: cy + 1.30, w: itemTextW, h: 0.25, font: 'B', size: 13, color: 'body' });
+    // Label pushed down to cy + 1.40 (was 1.30)
+    els.push({ type: 't', text: item.label, x: textX, y: cy + 1.40, w: itemTextW, h: 0.25, font: 'B', size: 13, color: 'body' });
   });
   return els;
 }
@@ -374,14 +375,14 @@ function layoutDetail(cfg) {
   var availH = C.CONTENT_END - startY;
   var cardW = 8.00;
   var cardX = C.SAFE_X_MIN + (C.SAFE_W - cardW) / 2;
-  var cardH = Math.min(availH, items.length * 0.60 + 0.40);
+  var cardH = Math.min(availH, items.length * 0.70 + 0.40);
   var cardY = startY + (availH - cardH) / 2;
 
   els.push({ type: 's', x: cardX, y: cardY, w: cardW, h: cardH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 
   var textW = cardW * C.TEXT_RATIO;
   var innerX = cardX + (cardW - textW) / 2;
-  var rowH = 0.50;
+  var rowH = 0.60;
 
   items.forEach(function(item, i) {
     var iy = cardY + 0.20 + i * rowH;
@@ -484,64 +485,75 @@ function layoutPillar(cfg) {
 // ============================================================
 
 function layoutFromto(cfg) {
-  var header = renderHeader(cfg);
-  var els = header.els;
-  var startY = header.contentY;
-  var isDark = cfg.dark === 1;
+var header = renderHeader(cfg);
+var els = header.els;
+var startY = header.contentY;
+var isDark = cfg.dark === 1;
 
-  var grid = C.GRID.col2;
-  var availH = C.CONTENT_END - startY;
+var grid = C.GRID.col2;
+var availH = C.CONTENT_END - startY;
 
-  // Left side: description
-  var lx = grid.cols[0].x;
-  var lw = grid.cols[0].w;
-  var ltw = lw * C.TEXT_RATIO;
-  var ltx = lx + (lw - ltw) / 2;
+// Right side: FROM → TO blocks (calculate first for alignment)
+var rx = grid.cols[1].x;
+var rw = grid.cols[1].w;
+var rtw = rw * C.TEXT_RATIO;
+var rtx = rx + (rw - rtw) / 2;
+var blockH = (availH - C.GAP - 0.40) / 2;
 
-  if (cfg.description) {
-    els.push({ type: 't', text: cfg.description, x: ltx, y: startY + 0.20, w: ltw, h: availH * 0.50, font: 'B', size: 13, color: 'body' });
+// FROM block
+els.push({ type: 's', x: rx, y: startY, w: rw, h: blockH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
+els.push({ type: 't', text: 'FROM', x: rtx, y: startY + 0.15, w: rtw, h: 0.20, font: 'H', size: 10, color: 'muted' });
+if (cfg.from) {
+  els.push({ type: 't', text: cfg.from.value, x: rtx, y: startY + 0.45, w: rtw, h: 0.60, font: 'H', size: 36, color: 'accent', textStyle: 'L4' });
+  if (cfg.from.label) {
+    els.push({ type: 't', text: cfg.from.label, x: rtx, y: startY + 1.15, w: rtw, h: 0.30, font: 'B', size: 11, color: 'body' });
+  }
+}
+
+// Arrow
+var arrowY = startY + blockH + 0.05;
+els.push({ type: 't', text: '\u2193', x: rx + rw / 2 - 0.25, y: arrowY, w: 0.50, h: 0.30, font: 'H', size: 22, color: 'accent', align: 'center' });
+
+// TO block
+var toY = startY + blockH + C.GAP + 0.40;
+var toBlockH = C.CONTENT_END - toY;
+els.push({ type: 's', x: rx, y: toY, w: rw, h: toBlockH, fill: 'accent' });
+els.push({ type: 't', text: 'TO', x: rtx, y: toY + 0.15, w: rtw, h: 0.20, font: 'H', size: 10, color: 'white' });
+if (cfg.to) {
+  els.push({ type: 't', text: cfg.to.value, x: rtx, y: toY + 0.45, w: rtw, h: 0.60, font: 'H', size: 36, color: 'white', textStyle: 'L4' });
+  if (cfg.to.label) {
+    els.push({ type: 't', text: cfg.to.label, x: rtx, y: toY + 1.15, w: rtw, h: 0.30, font: 'B', size: 11, color: 'white' });
+  }
+}
+
+// Left side: description + benefits
+var lx = grid.cols[0].x;
+var lw = grid.cols[0].w;
+var ltw = lw * C.TEXT_RATIO;
+var ltx = lx + (lw - ltw) / 2;
+
+if (cfg.description) {
+  els.push({ type: 't', text: cfg.description, x: ltx, y: startY + 0.20, w: ltw, h: availH * 0.45, font: 'B', size: 13, color: 'body' });
+}
+
+// Benefits box — same bottom edge as TO block
+if (cfg.benefits) {
+  // Handle array of objects or plain string
+  var benefitsText = cfg.benefits;
+  if (Array.isArray(cfg.benefits)) {
+    benefitsText = cfg.benefits.map(function(b) {
+      return typeof b === 'object' ? (b.text || b) : b;
+    }).join(' | ');
   }
 
-  // Benefits bar â€” outline style for visual distinction
-  if (cfg.benefits) {
-    els.push({ type: 's', x: lx, y: startY + availH - 0.80, w: lw, h: 0.60, fill: isDark ? 'dkGray' : 'white', border: 'accent' });
-    els.push({ type: 't', text: 'BENEFITS', x: ltx, y: startY + availH - 0.78, w: ltw, h: 0.20, font: 'H', size: 9, color: 'accent' });
-    els.push({ type: 't', text: cfg.benefits, x: ltx, y: startY + availH - 0.55, w: ltw, h: 0.30, font: 'B', size: 11, color: 'accent', valign: 'middle' });
-  }
+  var benefitsH = toBlockH;
+  var benefitsY = toY;
+  els.push({ type: 's', x: lx, y: benefitsY, w: lw, h: benefitsH, fill: isDark ? 'dkGray' : 'white', border: 'accent' });
+  els.push({ type: 't', text: 'BENEFITS', x: ltx, y: benefitsY + 0.15, w: ltw, h: 0.20, font: 'H', size: 9, color: 'accent' });
+  els.push({ type: 't', text: benefitsText, x: ltx, y: benefitsY + 0.45, w: ltw, h: benefitsH - 0.65, font: 'B', size: 12, color: 'accent', valign: 'top' });
+}
 
-  // Right side: FROM â†’ TO blocks
-  var rx = grid.cols[1].x;
-  var rw = grid.cols[1].w;
-  var rtw = rw * C.TEXT_RATIO;
-  var rtx = rx + (rw - rtw) / 2;
-  var blockH = (availH - C.GAP * 2 - 0.40) / 2;
-
-  // FROM block
-  els.push({ type: 's', x: rx, y: startY, w: rw, h: blockH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-  els.push({ type: 't', text: 'FROM', x: rtx, y: startY + 0.15, w: rtw, h: 0.20, font: 'H', size: 10, color: 'muted' });
-  if (cfg.from) {
-    els.push({ type: 't', text: cfg.from.value, x: rtx, y: startY + 0.45, w: rtw, h: 0.60, font: 'H', size: 36, color: 'accent' });
-    if (cfg.from.label) {
-      els.push({ type: 't', text: cfg.from.label, x: rtx, y: startY + 1.15, w: rtw, h: 0.30, font: 'B', size: 11, color: 'body' });
-    }
-  }
-
-  // Arrow between blocks
-  var arrowY = startY + blockH + 0.05;
-  els.push({ type: 't', text: '\u2193', x: rx + rw / 2 - 0.25, y: arrowY, w: 0.50, h: 0.30, font: 'H', size: 22, color: 'accent', align: 'center' });
-
-  // TO block
-  var toY = startY + blockH + C.GAP + 0.40;
-  els.push({ type: 's', x: rx, y: toY, w: rw, h: blockH, fill: 'accent' });
-  els.push({ type: 't', text: 'TO', x: rtx, y: toY + 0.15, w: rtw, h: 0.20, font: 'H', size: 10, color: 'white' });
-  if (cfg.to) {
-    els.push({ type: 't', text: cfg.to.value, x: rtx, y: toY + 0.45, w: rtw, h: 0.60, font: 'H', size: 36, color: 'white' });
-    if (cfg.to.label) {
-      els.push({ type: 't', text: cfg.to.label, x: rtx, y: toY + 1.15, w: rtw, h: 0.30, font: 'B', size: 11, color: 'white' });
-    }
-  }
-
-  return els;
+return els;
 }
 
 // ============================================================
@@ -596,7 +608,7 @@ function layoutCapability(cfg) {
       var cx = grid.cols[vi].x;
       var cw = grid.cols[vi].w;
       els.push({ type: 's', x: cx, y: cellY, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-      els.push({ type: 't', text: val, x: cx + 0.10, y: cellY, w: cw - 0.20, h: cellH, font: 'B', size: 11, color: 'body', valign: 'middle' });
+      els.push({ type: 't', text: val, x: cx + 0.15, y: cellY, w: cw - 0.30, h: cellH, font: 'B', size: 11, color: 'body', valign: 'middle' });
     });
   });
 
@@ -663,7 +675,7 @@ function layoutSchedule(cfg) {
     // Activity
     els.push({ type: 't', text: item.activity || '', x: actX + 0.10, y: ry, w: actW - 0.20, h: rowH, font: 'B', size: 12, color: 'title', valign: 'middle' });
     // Who
-    els.push({ type: 't', text: item.who || '', x: whoX + 0.10, y: ry, w: whoW - 0.20, h: rowH, font: 'B', size: 11, color: 'muted', valign: 'middle' });
+    els.push({ type: 't', text: item.who || '', x: whoX + 0.10, y: ry, w: whoW - 0.20, h: rowH, font: 'B', size: 11, color: 'body', valign: 'middle' });
   });
 
   return els;
