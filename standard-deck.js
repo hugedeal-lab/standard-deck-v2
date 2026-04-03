@@ -196,34 +196,34 @@ function getFooterDate() {
 // ============================================================
 
 function resolveColor(token, isDark) {
-  if (token && token.charAt(0) === '#') return token;
-  var semantics = {
-    title:      isDark ? PALETTE.white    : PALETTE.black,
-    body:       isDark ? PALETTE.ltGray   : PALETTE.mdGray,
-    sub:        isDark ? _accentLight     : PALETTE.mdGray,
-    muted:      PALETTE.gray,
-    accent:     _accentMid,
-    accentLt:   _accentLight,
-    accentDk:   _accentDark,
-    cardBg:     isDark ? PALETTE.dkGray   : '#FFFFFF',
-    cardBorder: isDark ? 'transparent'    : PALETTE.ltGray,
-    // V6.0: Background mode affects slideBg
-    slideBg:    isDark
-      ? (_bgMode === 'deep' ? PALETTE.deepBlack : PALETTE.black)
-      : (_bgMode === 'brand' ? PALETTE.cream : PALETTE.white),
-    white:      '#FFFFFF',
-    black:      '#000000',
-    // NEW tokens for direct access
-    cream:      PALETTE.cream,
-    deepBlack:  PALETTE.deepBlack
-  };
-  if (semantics[token]) return semantics[token];
-  if (PALETTE[token]) return PALETTE[token];
-  return isDark ? PALETTE.white : PALETTE.black;
+// Defensive: handle non-string tokens (boolean, number, null, undefined)
+if (!token || typeof token !== 'string') return isDark ? PALETTE.white : PALETTE.black;
+if (token.charAt(0) === '#') return token;
+var semantics = {
+  title:      isDark ? PALETTE.white    : PALETTE.black,
+  body:       isDark ? PALETTE.ltGray   : PALETTE.mdGray,
+  sub:        isDark ? _accentLight     : PALETTE.mdGray,
+  muted:      PALETTE.gray,
+  accent:     _accentMid,
+  accentLt:   _accentLight,
+  accentDk:   _accentDark,
+  cardBg:     isDark ? PALETTE.dkGray   : '#FFFFFF',
+  cardBorder: isDark ? 'transparent'    : PALETTE.ltGray,
+  slideBg:    isDark
+    ? (_bgMode === 'deep' ? PALETTE.deepBlack : PALETTE.black)
+    : (_bgMode === 'brand' ? PALETTE.cream : PALETTE.white),
+  white:      '#FFFFFF',
+  black:      '#000000',
+  cream:      PALETTE.cream,
+  deepBlack:  PALETTE.deepBlack
+};
+if (semantics[token]) return semantics[token];
+if (PALETTE[token]) return PALETTE[token];
+return isDark ? PALETTE.white : PALETTE.black;
 }
 
 function colorForPptx(token, isDark) {
-  return resolveColor(token, isDark).replace('#', '');
+return resolveColor(token, isDark).replace('#', '');
 }
 
 // ============================================================
@@ -431,11 +431,13 @@ function renderText(el, isDark) {
   div.style.textAlign = el.align || (isCompact ? 'center' : 'left');
 
   // V6.0: Auto-apply typography hierarchy
-  var textStyle = getTextStyle(el);
-  var ts = TEXT_STYLES[textStyle];
-  div.style.textTransform = ts.transform;
-  div.style.letterSpacing = ts.spacing;
-  if (!el.bold) div.style.fontWeight = ts.weight;
+var textStyle = getTextStyle(el);
+var ts = TEXT_STYLES[textStyle];
+div.style.textTransform = ts.transform;
+div.style.letterSpacing = ts.spacing;
+// DON'T override font weight from textStyle — let FONT_MAP control
+// Only textStyle L1 should force bold
+if (textStyle === 'L1') div.style.fontWeight = 700;
 
   if (el.valign === 'middle' || el.valign === 'bottom') {
     div.style.display = 'flex';
@@ -459,38 +461,40 @@ function renderText(el, isDark) {
 }
 
 function renderShape(el, isDark) {
-  var div = document.createElement('div');
-  div.style.cssText = 'position:absolute;';
-  div.style.left   = toX(el.x) + 'px';
-  div.style.top    = toY(el.y) + 'px';
-  div.style.width  = toX(el.w) + 'px';
-  div.style.height = toY(el.h) + 'px';
-  div.style.backgroundColor = resolveColor(el.fill || 'cardBg', isDark);
-  if (el.border) {
-    div.style.border = '1px solid ' + resolveColor(el.border, isDark);
-  }
-  if (el.transparency) {
-    div.style.opacity = (100 - el.transparency) / 100;
-  }
-  return div;
+var div = document.createElement('div');
+div.style.cssText = 'position:absolute;';
+div.style.left   = toX(el.x) + 'px';
+div.style.top    = toY(el.y) + 'px';
+div.style.width  = toX(el.w) + 'px';
+div.style.height = toY(el.h) + 'px';
+div.style.backgroundColor = resolveColor(el.fill || 'cardBg', isDark);
+if (el.border && typeof el.border === 'string') {
+  div.style.border = '1px solid ' + resolveColor(el.border, isDark);
+}
+if (el.transparency) {
+  div.style.opacity = (100 - el.transparency) / 100;
+}
+return div;
 }
 
 function renderOval(el, isDark) {
-  var div = renderShape(el, isDark);
-  div.style.borderRadius = '50%';
-  return div;
+var div = renderShape(el, isDark);
+div.style.borderRadius = '50%';
+return div;
 }
 
 function renderIcon(el) {
-  var div = document.createElement('div');
-  div.style.cssText = 'position:absolute;display:flex;align-items:center;justify-content:center;line-height:1;';
-  div.style.left     = toX(el.x) + 'px';
-  div.style.top      = toY(el.y) + 'px';
-  div.style.width    = toX(el.w) + 'px';
-  div.style.height   = toY(el.h) + 'px';
-  div.style.fontSize = Math.min(toX(el.w), toY(el.h)) * 0.5 + 'px';
-  div.textContent    = el.icon || '';
-  return div;
+var div = document.createElement('div');
+div.style.cssText = 'position:absolute;display:flex;align-items:center;justify-content:center;line-height:1;';
+div.style.left = toX(el.x) + 'px';
+div.style.top = toY(el.y) + 'px';
+div.style.width = toX(el.w) + 'px';
+div.style.height = toY(el.h) + 'px';
+// Larger icons (cards) use 0.55 scale, small icons (circles) use 0.45
+var scale = (el.w >= 0.45) ? 0.55 : 0.45;
+div.style.fontSize = Math.min(toX(el.w), toY(el.h)) * scale + 'px';
+div.textContent = el.icon || '';
+return div;
 }
 
 function renderDivider(el, isDark) {
