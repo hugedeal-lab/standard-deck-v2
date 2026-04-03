@@ -421,63 +421,66 @@ function layoutBullets(cfg) {
 }
 
 // ============================================================
-// NEW LAYOUT: PILLAR â€” numbered strategic pillars (3 columns)
+// NEW LAYOUT: PILLAR — numbered strategic pillars (3 columns)
 // ============================================================
 
 function layoutPillar(cfg) {
-  var header = renderHeader(cfg);
-  var els = header.els;
-  var startY = header.contentY;
-  var isDark = cfg.dark === 1;
+var header = renderHeader(cfg);
+var els = header.els;
+var startY = header.contentY;
+var isDark = cfg.dark === 1;
 
-  var items = cfg.items || [];
-  var cols = Math.min(items.length, 4);
-  var grid = getGrid(cols);
-  var availH = C.CONTENT_END - startY;
+var items = cfg.items || [];
+var cols = Math.min(items.length, 4);
+var grid = getGrid(cols);
+var availH = C.CONTENT_END - startY;
 
-  items.forEach(function(item, i) {
-    if (i >= cols) return;
-    var cx = grid.cols[i].x;
-    var cw = grid.cols[i].w;
-    var textW = cw * C.TEXT_RATIO;
-    var textX = cx + (cw - textW) / 2;
+// Accessibility: use light accent on dark backgrounds for legibility
+var labelColor = isDark ? 'accentLt' : 'accent';
 
-    // Column background
-    els.push({ type: 's', x: cx, y: startY, w: cw, h: availH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
+items.forEach(function(item, i) {
+  if (i >= cols) return;
+  var cx = grid.cols[i].x;
+  var cw = grid.cols[i].w;
+  var textW = cw * C.TEXT_RATIO;
+  var textX = cx + (cw - textW) / 2;
 
-    // Pillar number label (e.g., "PILLAR.001")
-    var pillarNum = item.num || String(i + 1).padStart(3, '0');
-    els.push({ type: 't', text: 'PILLAR.' + pillarNum, x: textX, y: startY + 0.20, w: textW, h: 0.25, font: 'H', size: 10, color: 'accent' });
+  // Column background
+  els.push({ type: 's', x: cx, y: startY, w: cw, h: availH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 
-    // Divider under pillar label
-    els.push({ type: 'd', x: textX, y: startY + 0.50, w: textW, color: 'accent' });
+  // Pillar number label (e.g., "PILLAR.001")
+  var pillarNum = item.num || String(i + 1).padStart(3, '0');
+  els.push({ type: 't', text: 'PILLAR.' + pillarNum, x: textX, y: startY + 0.20, w: textW, h: 0.25, font: 'H', size: 10, color: labelColor });
 
-    // Title
-    els.push({ type: 't', text: item.title, x: textX, y: startY + 0.65, w: textW, h: 0.35, font: 'H', size: 18, color: 'title' });
+  // Divider under pillar label
+  els.push({ type: 'd', x: textX, y: startY + 0.50, w: textW, color: labelColor });
 
-    // Subtitle
-    if (item.subtitle) {
-      els.push({ type: 't', text: item.subtitle, x: textX, y: startY + 1.05, w: textW, h: 0.25, font: 'H', size: 11, color: 'muted' });
-    }
+  // Title
+  els.push({ type: 't', text: item.title, x: textX, y: startY + 0.65, w: textW, h: 0.35, font: 'H', size: 18, color: 'title' });
 
-    // Bullet items
-    var bulletStartY = startY + 1.45;
-    var bulletItems = item.items || [];
-    bulletItems.forEach(function(bi, bi_idx) {
-      var by = bulletStartY + bi_idx * 0.40;
-      els.push({ type: 'o', x: textX, y: by + 0.10, w: 0.08, h: 0.08, fill: 'accent' });
-      els.push({ type: 't', text: bi, x: textX + 0.20, y: by, w: textW - 0.20, h: 0.35, font: 'B', size: 11, color: 'body', valign: 'middle' });
-    });
+  // Subtitle
+  if (item.subtitle) {
+    els.push({ type: 't', text: item.subtitle, x: textX, y: startY + 1.05, w: textW, h: 0.25, font: 'H', size: 11, color: 'muted' });
+  }
 
-    // Goal at bottom
-    if (item.goal) {
-      var goalY = startY + availH - 0.70;
-      els.push({ type: 'd', x: textX, y: goalY, w: textW, color: 'ltGray' });
-      els.push({ type: 't', text: 'GOAL', x: textX, y: goalY + 0.08, w: textW, h: 0.20, font: 'H', size: 9, color: 'accent' });
-      els.push({ type: 't', text: item.goal, x: textX, y: goalY + 0.30, w: textW, h: 0.35, font: 'B', size: 11, color: 'title' });
-    }
+  // Bullet items
+  var bulletStartY = startY + 1.45;
+  var bulletItems = item.items || [];
+  bulletItems.forEach(function(bi, bi_idx) {
+    var by = bulletStartY + bi_idx * 0.40;
+    els.push({ type: 'o', x: textX, y: by + 0.10, w: 0.08, h: 0.08, fill: labelColor });
+    els.push({ type: 't', text: bi, x: textX + 0.20, y: by, w: textW - 0.20, h: 0.35, font: 'B', size: 11, color: 'body', valign: 'middle' });
   });
-  return els;
+
+  // Goal at bottom
+  if (item.goal) {
+    var goalY = startY + availH - 0.70;
+    els.push({ type: 'd', x: textX, y: goalY, w: textW, color: 'ltGray' });
+    els.push({ type: 't', text: 'GOAL', x: textX, y: goalY + 0.08, w: textW, h: 0.20, font: 'H', size: 9, color: labelColor });
+    els.push({ type: 't', text: item.goal, x: textX, y: goalY + 0.30, w: textW, h: 0.35, font: 'B', size: 11, color: 'title' });
+  }
+});
+return els;
 }
 
 // ============================================================
@@ -578,7 +581,7 @@ function layoutCapability(cfg) {
   var dataStartY = startY + headerRowH + C.GAP;
   var rowCount = items.length;
   var dataH = availH - headerRowH - C.GAP;
-  var rowH = rowCount > 0 ? Math.min(0.55, (dataH - C.GAP * (rowCount - 1)) / rowCount) : 0.55;
+  var rowH = rowCount > 0 ? Math.min(0.50, (dataH - C.GAP * (rowCount - 1)) / (rowCount * 1.5)) : 0.50;
 
   // Column headers
   columns.forEach(function(colName, ci) {
@@ -616,69 +619,62 @@ function layoutCapability(cfg) {
 }
 
 // ============================================================
-// NEW LAYOUT: SCHEDULE â€” time-based agenda table
+// NEW LAYOUT: SCHEDULE — time-based agenda table
 // Max 8 agenda items per slide. If more than 8, split across
-// two schedule slides (e.g., "Day One â€” Morning" and
-// "Day One â€” Afternoon"). The engine auto-shrinks rows for
-// 6-8 items.
+// two schedule slides. The engine auto-shrinks rows for 6-8 items.
 // ============================================================
 
 function layoutSchedule(cfg) {
-  var header = renderHeader(cfg);
-  var els = header.els;
-  var startY = header.contentY;
-  var isDark = cfg.dark === 1;
+var header = renderHeader(cfg);
+var els = header.els;
+var startY = header.contentY;
+var isDark = cfg.dark === 1;
 
-  var items = cfg.items || [];
-  var availH = C.CONTENT_END - startY;
+var items = cfg.items || [];
+var availH = C.CONTENT_END - startY;
+var headerH = 0.40;
+var headerGap = C.GAP;
+var dataAvail = availH - headerH - headerGap;
+var gapFactor = 0.35;
+var rowH = (dataAvail - (items.length - 1) * C.GAP * gapFactor) / items.length;
+rowH = Math.max(0.38, Math.min(0.75, rowH));
 
-  // Auto-shrink rows to fit within CONTENT_END; minimum 0.45"
-  var totalNeeded = items.length * 0.65 + (items.length - 1) * C.GAP * 0.5 + 0.40 + C.GAP;
-  var rowH;
+// Column widths: Time (2.5"), Activity (6.5"), Who (3.42")
+var timeX = C.SAFE_X_MIN;
+var timeW = 2.50;
+var actX = timeX + timeW + C.GAP;
+var actW = 6.50;
+var whoX = actX + actW + C.GAP;
+var whoW = C.SAFE_W - timeW - actW - C.GAP * 2;
 
-  if (totalNeeded > availH) {
-    // Shrink rows to fit â€” minimum 0.45"
-    rowH = Math.max(0.45, (availH - 0.40 - C.GAP - C.GAP * 0.5 * (items.length - 1)) / items.length);
-  } else {
-    rowH = Math.min(0.80, (availH - 0.40 - C.GAP - C.GAP * 0.5 * (items.length - 1)) / items.length);
-  }
+// Column headers
+els.push({ type: 's', x: timeX, y: startY, w: timeW, h: headerH, fill: 'accent' });
+els.push({ type: 't', text: 'TIME', x: timeX + 0.10, y: startY, w: timeW - 0.20, h: headerH, font: 'H', size: 10, color: 'white', valign: 'middle' });
+els.push({ type: 's', x: actX, y: startY, w: actW, h: headerH, fill: 'accent' });
+els.push({ type: 't', text: 'ACTIVITY', x: actX + 0.10, y: startY, w: actW - 0.20, h: headerH, font: 'H', size: 10, color: 'white', valign: 'middle' });
+els.push({ type: 's', x: whoX, y: startY, w: whoW, h: headerH, fill: 'accent' });
+els.push({ type: 't', text: 'PARTICIPANTS', x: whoX + 0.10, y: startY, w: whoW - 0.20, h: headerH, font: 'H', size: 10, color: 'white', valign: 'middle' });
 
-  // Column widths: Time (2.5"), Activity (6.5"), Who (3.42")
-  var timeX = C.SAFE_X_MIN;
-  var timeW = 2.50;
-  var actX = timeX + timeW + C.GAP;
-  var actW = 6.50;
-  var whoX = actX + actW + C.GAP;
-  var whoW = C.SAFE_W - timeW - actW - C.GAP * 2;
+var dataStartY = startY + headerH + headerGap;
 
-  // Column headers
-  els.push({ type: 's', x: timeX, y: startY, w: timeW, h: 0.40, fill: 'accent' });
-  els.push({ type: 't', text: 'TIME', x: timeX + 0.10, y: startY, w: timeW - 0.20, h: 0.40, font: 'H', size: 10, color: 'white', valign: 'middle' });
-  els.push({ type: 's', x: actX, y: startY, w: actW, h: 0.40, fill: 'accent' });
-  els.push({ type: 't', text: 'ACTIVITY', x: actX + 0.10, y: startY, w: actW - 0.20, h: 0.40, font: 'H', size: 10, color: 'white', valign: 'middle' });
-  els.push({ type: 's', x: whoX, y: startY, w: whoW, h: 0.40, fill: 'accent' });
-  els.push({ type: 't', text: 'PARTICIPANTS', x: whoX + 0.10, y: startY, w: whoW - 0.20, h: 0.40, font: 'H', size: 10, color: 'white', valign: 'middle' });
+items.forEach(function(item, i) {
+  var ry = dataStartY + i * (rowH + C.GAP * gapFactor);
+  var bgFill = i % 2 === 0 ? 'cardBg' : (isDark ? 'dkGray' : 'ltGray');
 
-  var dataStartY = startY + 0.40 + C.GAP;
+  // Row backgrounds
+  els.push({ type: 's', x: timeX, y: ry, w: timeW, h: rowH, fill: bgFill });
+  els.push({ type: 's', x: actX, y: ry, w: actW, h: rowH, fill: bgFill });
+  els.push({ type: 's', x: whoX, y: ry, w: whoW, h: rowH, fill: bgFill });
 
-  items.forEach(function(item, i) {
-    var ry = dataStartY + i * (rowH + C.GAP * 0.5);
-    var bgFill = i % 2 === 0 ? 'cardBg' : (isDark ? 'dkGray' : 'ltGray');
+  // Time
+  els.push({ type: 't', text: item.time || '', x: timeX + 0.10, y: ry, w: timeW - 0.20, h: rowH, font: 'H', size: 11, color: 'accent', valign: 'middle' });
+  // Activity
+  els.push({ type: 't', text: item.activity || '', x: actX + 0.10, y: ry, w: actW - 0.20, h: rowH, font: 'B', size: 12, color: 'title', valign: 'middle' });
+  // Who
+  els.push({ type: 't', text: item.who || '', x: whoX + 0.10, y: ry, w: whoW - 0.20, h: rowH, font: 'B', size: 11, color: 'body', valign: 'middle' });
+});
 
-    // Row backgrounds
-    els.push({ type: 's', x: timeX, y: ry, w: timeW, h: rowH, fill: bgFill });
-    els.push({ type: 's', x: actX, y: ry, w: actW, h: rowH, fill: bgFill });
-    els.push({ type: 's', x: whoX, y: ry, w: whoW, h: rowH, fill: bgFill });
-
-    // Time
-    els.push({ type: 't', text: item.time || '', x: timeX + 0.10, y: ry, w: timeW - 0.20, h: rowH, font: 'H', size: 11, color: 'accent', valign: 'middle' });
-    // Activity
-    els.push({ type: 't', text: item.activity || '', x: actX + 0.10, y: ry, w: actW - 0.20, h: rowH, font: 'B', size: 12, color: 'title', valign: 'middle' });
-    // Who
-    els.push({ type: 't', text: item.who || '', x: whoX + 0.10, y: ry, w: whoW - 0.20, h: rowH, font: 'B', size: 11, color: 'body', valign: 'middle' });
-  });
-
-  return els;
+return els;
 }
 
 // ============================================================

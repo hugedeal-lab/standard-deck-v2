@@ -144,34 +144,38 @@ var TEXT_STYLES = {
 var _currentSlideLayout = null;
 
 function getTextStyle(el) {
-  // Manual override takes priority
-  if (el.textStyle && TEXT_STYLES[el.textStyle]) {
-    return el.textStyle;
-  }
-  // Cover/closing/divider titles → L1 (spaced caps)
-  if ((_currentSlideLayout === 'cover' ||
-       _currentSlideLayout === 'closing' ||
-       _currentSlideLayout === 'divider') && el.size >= 36) {
-    return 'L1';
-  }
-  // Content slide titles → L2 (all caps)
-  if (el.size >= 30 && el.font === 'H') {
-    return 'L2';
-  }
-  // Tags (small accent text) → L3
-  if (el.color === 'accent' && el.size <= 14 && el.font === 'H') {
-    return 'L3';
-  }
-  // Subtitles and section headings → L3
-  if (el.size >= 18 && el.size <= 24 && el.font === 'H') {
-    return 'L3';
-  }
-  // Footnotes, muted, very small → L5
-  if (el.size <= 10 || el.color === 'muted') {
-    return 'L5';
-  }
-  // Everything else → L4 (body, no transform)
+// Manual override takes priority
+if (el.textStyle && TEXT_STYLES[el.textStyle]) {
+  return el.textStyle;
+}
+// Cover/closing titles only → L1 (spaced caps)
+if ((_currentSlideLayout === 'cover' ||
+     _currentSlideLayout === 'closing') && el.size >= 36) {
+  return 'L1';
+}
+// Divider/coverloc titles — no transform (too wide with spacing)
+if ((_currentSlideLayout === 'divider' ||
+     _currentSlideLayout === 'coverloc') && el.size >= 36) {
   return 'L4';
+}
+// Content slide titles → L2 (all caps)
+if (el.size >= 30 && el.font === 'H' && !el.textStyle) {
+  return 'L2';
+}
+// Tags (small accent text) → L3
+if (el.color === 'accent' && el.size <= 14 && el.font === 'H') {
+  return 'L3';
+}
+// Subtitles and section headings → L3
+if (el.size >= 18 && el.size <= 24 && el.font === 'H') {
+  return 'L3';
+}
+// Footnotes, muted, very small → L5
+if (el.size <= 10 || el.color === 'muted') {
+  return 'L5';
+}
+// Everything else → L4 (body, no transform)
+return 'L4';
 }
 
 // ============================================================
