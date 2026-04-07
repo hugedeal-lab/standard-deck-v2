@@ -1,8 +1,10 @@
 /* ============================================================
- deck-layouts.js v6.0.0-dev -- Layout Shortcut Library
+ deck-layouts.js v6.0.1 -- Layout Shortcut Library
  Depends on: standard-deck.js (for SD_CONST, getTitleMetrics)
  Phase 2C: Metrics spacing fix, 5 new layouts
            (pillar, fromto, capability, schedule, coverloc)
+ v6.0.1:  Divider gap, pillar title spacing, card title wrap,
+          stats dark-mode contrast
  ============================================================ */
 
 (function () {
@@ -68,14 +70,12 @@ if (cfg.tag) {
 }
 
 var titleY = 2.00;
-// L1 spaced caps expand width ~2x, so even shorter titles wrap
 var titleH = titleLen > 20 ? 1.80 : 1.20;
 els.push({
   type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
   w: 11.00, h: titleH, font: 'H', size: 42, color: 'title'
 });
 
-// Subtitle and date drop below title dynamically
 var subY = titleY + titleH + 0.15;
 if (cfg.subtitle) {
   els.push({
@@ -101,7 +101,6 @@ function layoutClosing(cfg) {
   var els = [];
   var metrics = SD.getTitleMetrics(cfg.title);
 
-  // Push title higher to give room for subtitle + attribution
   var titleY = 2.00;
   els.push({
     type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
@@ -127,20 +126,24 @@ function layoutClosing(cfg) {
 }
 
 // ============================================================
-// LAYOUT: DIVIDER
+// LAYOUT: DIVIDER  [v6.0.1 FIX: title/subtitle collision]
+// Increased title box height (0.70 → 1.10) to accommodate
+// L1 spaced-caps wrapping. Subtitle now positioned relative
+// to title bottom edge instead of fixed offset.
 // ============================================================
 
 function layoutDivider(cfg) {
-  var centerY = (C.SLIDE_H - 1.50) / 2;
+  var centerY = (C.SLIDE_H - 1.80) / 2;
+  var titleH = 1.10;
   var els = [{
     type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: centerY,
-    w: 11.00, h: 0.70, font: 'H', size: 42,
+    w: 11.00, h: titleH, font: 'H', size: 42,
     color: 'title', valign: 'middle'
   }];
   if (cfg.subtitle) {
     els.push({
       type: 't', text: cfg.subtitle, x: C.SAFE_X_MIN,
-      y: centerY + 0.80, w: 11.00, h: 0.40,
+      y: centerY + titleH + 0.20, w: 11.00, h: 0.40,
       font: 'B', size: 18, color: 'sub'
     });
   }
@@ -148,7 +151,9 @@ function layoutDivider(cfg) {
 }
 
 // ============================================================
-// LAYOUT: CARDS
+// LAYOUT: CARDS  [v6.0.1 FIX: title wrap overlap]
+// Increased card title height (0.30 → 0.45) and step
+// (0.40 → 0.55) so 2-line titles don't collide with body.
 // ============================================================
 
 function layoutCards(cfg) {
@@ -182,8 +187,8 @@ function layoutCards(cfg) {
       innerY += 0.60;
     }
     if (item.title) {
-      els.push({ type: 't', text: item.title, x: textX, y: innerY, w: textW, h: 0.30, font: 'H', size: 15, color: 'title' });
-      innerY += 0.40;
+      els.push({ type: 't', text: item.title, x: textX, y: innerY, w: textW, h: 0.45, font: 'H', size: 15, color: 'title' });
+      innerY += 0.55;
     }
     if (item.text) {
       els.push({ type: 't', text: item.text, x: textX, y: innerY, w: textW, h: cardH - (innerY - cy) - 0.60, font: 'B', size: 13, color: 'body' });
@@ -196,7 +201,9 @@ function layoutCards(cfg) {
 }
 
 // ============================================================
-// LAYOUT: STATS
+// LAYOUT: STATS  [v6.0.1 FIX: dark-mode value contrast]
+// Value color now uses accentLt on dark slides instead of
+// accent, which had insufficient contrast against dkGray.
 // ============================================================
 
 function layoutStats(cfg) {
@@ -212,6 +219,8 @@ var grid = getGrid(cols);
 var availH = C.CONTENT_END - startY;
 var cellH = (availH - (C.GAP * (rows - 1))) / rows;
 
+var valueColor = isDark ? 'accentLt' : 'accent';
+
 items.forEach(function(item, i) {
   var col = i % cols;
   var row = Math.floor(i / cols);
@@ -222,7 +231,7 @@ items.forEach(function(item, i) {
   var textX = cx + (cw - textW) / 2;
 
   els.push({ type: 's', x: cx, y: cy, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-  els.push({ type: 't', text: item.value, x: textX, y: cy + 0.15, w: textW, h: 0.55, font: 'H', size: 44, color: 'accent', textStyle: 'L4' });
+  els.push({ type: 't', text: item.value, x: textX, y: cy + 0.15, w: textW, h: 0.55, font: 'H', size: 44, color: valueColor, textStyle: 'L4' });
   els.push({ type: 't', text: item.label, x: textX, y: cy + 0.80, w: textW, h: 0.25, font: 'H', size: 13, color: 'title' });
   if (item.text) {
     els.push({ type: 't', text: item.text, x: textX, y: cy + 1.10, w: textW, h: cellH - 1.35, font: 'B', size: 11, color: 'body' });
@@ -232,7 +241,7 @@ return els;
 }
 
 // ============================================================
-// LAYOUT: METRICS â€” spacing fix: pill top, value below, label below
+// LAYOUT: METRICS — spacing fix: pill top, value below, label below
 // ============================================================
 
 function layoutMetrics(cfg) {
@@ -248,7 +257,6 @@ function layoutMetrics(cfg) {
   var availH = C.CONTENT_END - startY;
   var cellH = (availH - (C.GAP * (rows - 1))) / rows;
 
-  // Auto-size: find longest value, scale if needed
   var sampleTextW = grid.cols[0].w * C.TEXT_RATIO;
   var maxValueLen = 0;
   items.forEach(function(item) {
@@ -274,7 +282,6 @@ function layoutMetrics(cfg) {
 
     els.push({ type: 's', x: cx, y: cy, w: cw, h: cellH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 
-    // Trend pill at top of card
     if (item.trend) {
       var trendColor = item.trendDir === 'up' ? 'ok' : 'bad';
       var arrow = item.trendDir === 'up' ? '\u25B2' : '\u25BC';
@@ -283,10 +290,8 @@ function layoutMetrics(cfg) {
       els.push({ type: 'p', text: arrow + ' ' + item.trend, x: pillX, y: cy + 0.15, w: pillW, h: 0.28, fill: trendColor, color: '#FFFFFF', size: 9 });
     }
 
-    // SPACING FIX: Value pushed down to cy + 0.55 (was 0.30)
     els.push({ type: 't', text: item.value, x: textX, y: cy + 0.55, w: itemTextW, h: 0.60, font: 'H', size: valueSize, color: 'title', textStyle: 'L4' });
 
-    // Label pushed down to cy + 1.40 (was 1.30)
     els.push({ type: 't', text: item.label, x: textX, y: cy + 1.40, w: itemTextW, h: 0.25, font: 'B', size: 13, color: 'body' });
   });
   return els;
@@ -421,7 +426,10 @@ function layoutBullets(cfg) {
 }
 
 // ============================================================
-// NEW LAYOUT: PILLAR — numbered strategic pillars (3 columns)
+// NEW LAYOUT: PILLAR  [v6.0.1 FIX: title/subtitle spacing]
+// Increased title height (0.35 → 0.55), pushed subtitle
+// (1.05 → 1.30) and bullets (1.45 → 1.70) down to prevent
+// L3 uppercase titles from overlapping subtitles.
 // ============================================================
 
 function layoutPillar(cfg) {
@@ -435,7 +443,6 @@ var cols = Math.min(items.length, 4);
 var grid = getGrid(cols);
 var availH = C.CONTENT_END - startY;
 
-// Accessibility: use light accent on dark backgrounds for legibility
 var labelColor = isDark ? 'accentLt' : 'accent';
 
 items.forEach(function(item, i) {
@@ -448,23 +455,23 @@ items.forEach(function(item, i) {
   // Column background
   els.push({ type: 's', x: cx, y: startY, w: cw, h: availH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 
-  // Pillar number label (e.g., "PILLAR.001")
+  // Pillar number label
   var pillarNum = item.num || String(i + 1).padStart(3, '0');
   els.push({ type: 't', text: 'PILLAR.' + pillarNum, x: textX, y: startY + 0.20, w: textW, h: 0.25, font: 'H', size: 10, color: labelColor });
 
   // Divider under pillar label
   els.push({ type: 'd', x: textX, y: startY + 0.50, w: textW, color: labelColor });
 
-  // Title
-  els.push({ type: 't', text: item.title, x: textX, y: startY + 0.65, w: textW, h: 0.35, font: 'H', size: 18, color: 'title' });
+  // Title — v6.0.1: h increased 0.35 → 0.55
+  els.push({ type: 't', text: item.title, x: textX, y: startY + 0.65, w: textW, h: 0.55, font: 'H', size: 18, color: 'title' });
 
-  // Subtitle
+  // Subtitle — v6.0.1: y pushed 1.05 → 1.30
   if (item.subtitle) {
-    els.push({ type: 't', text: item.subtitle, x: textX, y: startY + 1.05, w: textW, h: 0.25, font: 'H', size: 11, color: 'muted' });
+    els.push({ type: 't', text: item.subtitle, x: textX, y: startY + 1.30, w: textW, h: 0.25, font: 'H', size: 11, color: 'muted' });
   }
 
-  // Bullet items
-  var bulletStartY = startY + 1.45;
+  // Bullet items — v6.0.1: start pushed 1.45 → 1.70
+  var bulletStartY = startY + 1.70;
   var bulletItems = item.items || [];
   bulletItems.forEach(function(bi, bi_idx) {
     var by = bulletStartY + bi_idx * 0.40;
@@ -496,7 +503,6 @@ var isDark = cfg.dark === 1;
 var grid = C.GRID.col2;
 var availH = C.CONTENT_END - startY;
 
-// Right side: FROM → TO blocks (calculate first for alignment)
 var rx = grid.cols[1].x;
 var rw = grid.cols[1].w;
 var rtw = rw * C.TEXT_RATIO;
@@ -539,9 +545,7 @@ if (cfg.description) {
   els.push({ type: 't', text: cfg.description, x: ltx, y: startY + 0.20, w: ltw, h: availH * 0.45, font: 'B', size: 13, color: 'body' });
 }
 
-// Benefits box — same bottom edge as TO block
 if (cfg.benefits) {
-  // Handle array of objects or plain string
   var benefitsText = cfg.benefits;
   if (Array.isArray(cfg.benefits)) {
     benefitsText = cfg.benefits.map(function(b) {
@@ -582,7 +586,6 @@ var dataStartY = startY + headerRowH + C.GAP;
 var rowCount = items.length;
 var dataH = availH - headerRowH - C.GAP;
 
-// Each row = label + gap + cell. Calculate as one unit.
 var labelH = 0.25;
 var cellPad = 0.05;
 var rowUnit = rowCount > 0 ? (dataH - C.GAP * (rowCount - 1)) / rowCount : 1.00;
@@ -601,7 +604,6 @@ columns.forEach(function(colName, ci) {
 items.forEach(function(row, ri) {
   var ry = dataStartY + ri * (rowUnit + C.GAP);
 
-  // Metric label ABOVE the row
   if (row.metric) {
     els.push({ type: 't', text: row.metric, x: C.SAFE_X_MIN, y: ry, w: 3.00, h: labelH, font: 'H', size: 10, color: isDark ? 'accentLt' : 'accent' });
   }
@@ -623,8 +625,6 @@ return els;
 
 // ============================================================
 // NEW LAYOUT: SCHEDULE — time-based agenda table
-// Max 8 agenda items per slide. If more than 8, split across
-// two schedule slides. The engine auto-shrinks rows for 6-8 items.
 // ============================================================
 
 function layoutSchedule(cfg) {
@@ -642,7 +642,6 @@ var gapFactor = 0.35;
 var rowH = (dataAvail - (items.length - 1) * C.GAP * gapFactor) / items.length;
 rowH = Math.max(0.38, Math.min(0.75, rowH));
 
-// Column widths: Time (2.5"), Activity (6.5"), Who (3.42")
 var timeX = C.SAFE_X_MIN;
 var timeW = 2.50;
 var actX = timeX + timeW + C.GAP;
@@ -664,16 +663,12 @@ items.forEach(function(item, i) {
   var ry = dataStartY + i * (rowH + C.GAP * gapFactor);
   var bgFill = i % 2 === 0 ? 'cardBg' : (isDark ? 'dkGray' : 'ltGray');
 
-  // Row backgrounds
   els.push({ type: 's', x: timeX, y: ry, w: timeW, h: rowH, fill: bgFill });
   els.push({ type: 's', x: actX, y: ry, w: actW, h: rowH, fill: bgFill });
   els.push({ type: 's', x: whoX, y: ry, w: whoW, h: rowH, fill: bgFill });
 
-  // Time
   els.push({ type: 't', text: item.time || '', x: timeX + 0.10, y: ry, w: timeW - 0.20, h: rowH, font: 'H', size: 11, color: 'accent', valign: 'middle' });
-  // Activity
   els.push({ type: 't', text: item.activity || '', x: actX + 0.10, y: ry, w: actW - 0.20, h: rowH, font: 'B', size: 12, color: 'title', valign: 'middle' });
-  // Who
   els.push({ type: 't', text: item.who || '', x: whoX + 0.10, y: ry, w: whoW - 0.20, h: rowH, font: 'B', size: 11, color: 'body', valign: 'middle' });
 });
 
@@ -687,7 +682,6 @@ return els;
 function layoutCoverloc(cfg) {
   var els = [];
 
-  // Organization name at top
   if (cfg.org) {
     els.push({
       type: 't', text: cfg.org, x: C.SAFE_X_MIN, y: C.TAG_Y,
@@ -695,14 +689,12 @@ function layoutCoverloc(cfg) {
     });
   }
 
-  // Main title â€” large, with room for wrapping
   var titleY = cfg.org ? 1.30 : C.TITLE_Y;
   els.push({
     type: 't', text: cfg.title, x: C.SAFE_X_MIN, y: titleY,
     w: 11.00, h: 1.20, font: 'H', size: 48, color: 'title'
   });
 
-  // Location â€” clear gap below title
   var locY = titleY + 1.50;
   if (cfg.location) {
     els.push({
@@ -711,7 +703,6 @@ function layoutCoverloc(cfg) {
     });
   }
 
-  // Date â€” below location
   var dateY = locY + 0.60;
   if (cfg.date) {
     els.push({
@@ -739,7 +730,6 @@ var LAYOUT_MAP = {
   rows:       layoutRows,
   detail:     layoutDetail,
   bullets:    layoutBullets,
-  // V6.0: New layouts
   pillar:     layoutPillar,
   fromto:     layoutFromto,
   capability: layoutCapability,
