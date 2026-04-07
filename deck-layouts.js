@@ -484,7 +484,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: FROMTO â€” before/after with large numbers
+// NEW LAYOUT: FROMTO - before/after with large numbers
 // ============================================================
 
 function layoutFromto(cfg) {
@@ -560,7 +560,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: CAPABILITY â€” matrix grid with column headers
+// NEW LAYOUT: CAPABILITY - matrix grid with column headers
 // ============================================================
 
 function layoutCapability(cfg) {
@@ -678,73 +678,10 @@ items.forEach(function(item, i) {
 });
 
 return els;
-
-// ============================================================
-// NEW LAYOUT: Split Quote
-// ============================================================
-
-function layoutSplitQuote(cfg) {
-var header = renderHeader(cfg);
-var els = header.els;
-var startY = header.contentY;
-var isDark = cfg.dark === 1;
-
-var items = cfg.items || [];
-var grid = getGrid(2);
-var availH = C.CONTENT_END - startY;
-
-// Destructure the two functional halves from the items array
-var quoteItem = items[0] || {};
-var detailItem = items[1] || {};
-
-var labelColor = isDark ? 'accentLt' : 'accent';
-
-// --- LEFT COLUMN: Accent Block (Quote) ---
-var lx = grid.cols[0].x;
-var lw = grid.cols[0].w;
-var ltw = lw * C.TEXT_RATIO;
-var ltx = lx + (lw - ltw) / 2;
-
-// Background
-els.push({ type: 's', x: lx, y: startY, w: lw, h: availH, fill: 'accent' });
-
-// Giant Quotation Mark
-els.push({ type: 't', text: '“', x: ltx - 0.15, y: startY + 0.15, w: ltw, h: 0.80, font: 'H', size: 90, color: 'white' });
-
-if (quoteItem.quote) {
-  els.push({ type: 't', text: quoteItem.quote, x: ltx, y: startY + 1.20, w: ltw, h: availH - 2.40, font: 'H', size: 28, color: 'white', valign: 'middle' });
-}
-
-if (quoteItem.author) {
-  var authorY = startY + availH - 0.80;
-  els.push({ type: 'd', x: ltx, y: authorY, w: ltw, color: 'white' });
-  els.push({ type: 't', text: quoteItem.author, x: ltx, y: authorY + 0.20, w: ltw, h: 0.35, font: 'B', size: 13, color: 'white' });
-}
-
-// --- RIGHT COLUMN: Content Block (Details) ---
-var rx = grid.cols[1].x;
-var rw = grid.cols[1].w;
-var rtw = rw * C.TEXT_RATIO;
-var rtx = rx + (rw - rtw) / 2;
-
-// Background
-els.push({ type: 's', x: rx, y: startY, w: rw, h: availH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
-
-if (detailItem.title) {
-  els.push({ type: 't', text: detailItem.title, x: rtx, y: startY + 0.40, w: rtw, h: 0.35, font: 'H', size: 18, color: labelColor });
-  els.push({ type: 'd', x: rtx, y: startY + 0.90, w: rtw, color: 'ltGray' });
-}
-
-if (detailItem.text) {
-  var textY = detailItem.title ? startY + 1.20 : startY + 0.40;
-  els.push({ type: 't', text: detailItem.text, x: rtx, y: textY, w: rtw, h: availH - 1.60, font: 'B', size: 13, color: 'body' });
-}
-
-return els;
 }
 
 // ============================================================
-// NEW LAYOUT: COVERLOC â€” cover with location and date
+// NEW LAYOUT: COVERLOC - cover with location and date
 // ============================================================
 
 function layoutCoverloc(cfg) {
@@ -805,7 +742,6 @@ var LAYOUT_MAP = {
   // V6.0: New layouts
   pillar:     layoutPillar,
   fromto:     layoutFromto,
-  splitQuote: layoutSplitQuote,
   capability: layoutCapability,
   schedule:   layoutSchedule,
   coverloc:   layoutCoverloc
