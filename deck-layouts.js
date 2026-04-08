@@ -1,10 +1,8 @@
 /* ============================================================
- deck-layouts.js v6.0.1 -- Layout Shortcut Library
+ deck-layouts.js v6.0.2 -- Layout Shortcut Library
  Depends on: standard-deck.js (for SD_CONST, getTitleMetrics)
- Phase 2C: Metrics spacing fix, 5 new layouts
-           (pillar, fromto, capability, schedule, coverloc)
- v6.0.1:  Divider gap, pillar title spacing, card title wrap,
-          stats dark-mode contrast
+ v6.0.1:  Divider gap, pillar spacing, card title, stats contrast
+ v6.0.2:  Bullets layout uses native bl element type
  ============================================================ */
 
 (function () {
@@ -99,7 +97,6 @@ return els;
 
 function layoutClosing(cfg) {
   var els = [];
-  var metrics = SD.getTitleMetrics(cfg.title);
 
   var titleY = 2.00;
   els.push({
@@ -126,10 +123,7 @@ function layoutClosing(cfg) {
 }
 
 // ============================================================
-// LAYOUT: DIVIDER  [v6.0.1 FIX: title/subtitle collision]
-// Increased title box height (0.70 → 1.10) to accommodate
-// L1 spaced-caps wrapping. Subtitle now positioned relative
-// to title bottom edge instead of fixed offset.
+// LAYOUT: DIVIDER  [v6.0.1 FIX]
 // ============================================================
 
 function layoutDivider(cfg) {
@@ -151,9 +145,7 @@ function layoutDivider(cfg) {
 }
 
 // ============================================================
-// LAYOUT: CARDS  [v6.0.1 FIX: title wrap overlap]
-// Increased card title height (0.30 → 0.45) and step
-// (0.40 → 0.55) so 2-line titles don't collide with body.
+// LAYOUT: CARDS  [v6.0.1 FIX]
 // ============================================================
 
 function layoutCards(cfg) {
@@ -183,7 +175,7 @@ function layoutCards(cfg) {
     var innerY = cy + 0.20;
 
     if (item.icon) {
-      els.push({ type: 'i', icon: item.icon, x: textX, y: innerY, w: 0.50, h: 0.50 });
+      els.push({ type: 'i', icon: item.icon, x: textX, y: innerY, w: 0.50, h: 0.50, color: isDark ? 'accentLt' : 'accent' });
       innerY += 0.60;
     }
     if (item.title) {
@@ -201,9 +193,7 @@ function layoutCards(cfg) {
 }
 
 // ============================================================
-// LAYOUT: STATS  [v6.0.1 FIX: dark-mode value contrast]
-// Value color now uses accentLt on dark slides instead of
-// accent, which had insufficient contrast against dkGray.
+// LAYOUT: STATS  [v6.0.1 FIX]
 // ============================================================
 
 function layoutStats(cfg) {
@@ -241,7 +231,7 @@ return els;
 }
 
 // ============================================================
-// LAYOUT: METRICS — spacing fix: pill top, value below, label below
+// LAYOUT: METRICS
 // ============================================================
 
 function layoutMetrics(cfg) {
@@ -291,7 +281,6 @@ function layoutMetrics(cfg) {
     }
 
     els.push({ type: 't', text: item.value, x: textX, y: cy + 0.55, w: itemTextW, h: 0.60, font: 'H', size: valueSize, color: 'title', textStyle: 'L4' });
-
     els.push({ type: 't', text: item.label, x: textX, y: cy + 1.40, w: itemTextW, h: 0.25, font: 'B', size: 13, color: 'body' });
   });
   return els;
@@ -392,7 +381,7 @@ function layoutDetail(cfg) {
   items.forEach(function(item, i) {
     var iy = cardY + 0.20 + i * rowH;
     if (item.icon) {
-      els.push({ type: 'i', icon: item.icon, x: innerX, y: iy, w: 0.40, h: 0.40 });
+      els.push({ type: 'i', icon: item.icon, x: innerX, y: iy, w: 0.40, h: 0.40, color: 'muted' });
     }
     els.push({ type: 't', text: item.label, x: innerX + 0.60, y: iy, w: 2.50, h: 0.40, font: 'H', size: 13, color: 'muted', valign: 'middle' });
     els.push({ type: 't', text: item.value, x: innerX + 3.30, y: iy, w: textW - 3.30, h: 0.40, font: 'B', size: 13, color: 'title', valign: 'middle' });
@@ -404,32 +393,37 @@ function layoutDetail(cfg) {
 }
 
 // ============================================================
-// LAYOUT: BULLETS
+// LAYOUT: BULLETS  [v6.0.2: native bl element type]
+// Now outputs a single bullet list element instead of
+// individual oval + text pairs. Preview renders styled dots,
+// PPTX exports as native PowerPoint bullets (editable).
 // ============================================================
 
 function layoutBullets(cfg) {
   var header = renderHeader(cfg);
   var els = header.els;
   var startY = header.contentY;
+  var availH = C.CONTENT_END - startY;
   var items = cfg.items || [];
 
-  var bulletH = 0.55;
-  var bulletX = C.SAFE_X_MIN + 0.40;
-  var bulletW = 10.00;
-
-  items.forEach(function(item, i) {
-    var by = startY + i * bulletH;
-    els.push({ type: 'o', x: C.SAFE_X_MIN + 0.10, y: by + 0.18, w: 0.12, h: 0.12, fill: 'accent' });
-    els.push({ type: 't', text: item, x: bulletX, y: by, w: bulletW, h: bulletH, font: 'B', size: 15, color: 'body', valign: 'middle' });
+  els.push({
+    type: 'bl',
+    items: items,
+    x: C.SAFE_X_MIN + 0.20,
+    y: startY,
+    w: 10.50,
+    h: availH,
+    font: 'B',
+    size: 15,
+    color: 'body',
+    bulletColor: 'accent'
   });
+
   return els;
 }
 
 // ============================================================
-// NEW LAYOUT: PILLAR  [v6.0.1 FIX: title/subtitle spacing]
-// Increased title height (0.35 → 0.55), pushed subtitle
-// (1.05 → 1.30) and bullets (1.45 → 1.70) down to prevent
-// L3 uppercase titles from overlapping subtitles.
+// LAYOUT: PILLAR  [v6.0.1 FIX]
 // ============================================================
 
 function layoutPillar(cfg) {
@@ -452,25 +446,18 @@ items.forEach(function(item, i) {
   var textW = cw * C.TEXT_RATIO;
   var textX = cx + (cw - textW) / 2;
 
-  // Column background
   els.push({ type: 's', x: cx, y: startY, w: cw, h: availH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 
-  // Pillar number label
   var pillarNum = item.num || String(i + 1).padStart(3, '0');
   els.push({ type: 't', text: 'PILLAR.' + pillarNum, x: textX, y: startY + 0.20, w: textW, h: 0.25, font: 'H', size: 10, color: labelColor });
-
-  // Divider under pillar label
   els.push({ type: 'd', x: textX, y: startY + 0.50, w: textW, color: labelColor });
 
-  // Title — v6.0.1: h increased 0.35 → 0.55
   els.push({ type: 't', text: item.title, x: textX, y: startY + 0.65, w: textW, h: 0.55, font: 'H', size: 18, color: 'title' });
 
-  // Subtitle — v6.0.1: y pushed 1.05 → 1.30
   if (item.subtitle) {
     els.push({ type: 't', text: item.subtitle, x: textX, y: startY + 1.30, w: textW, h: 0.25, font: 'H', size: 11, color: 'muted' });
   }
 
-  // Bullet items — v6.0.1: start pushed 1.45 → 1.70
   var bulletStartY = startY + 1.70;
   var bulletItems = item.items || [];
   bulletItems.forEach(function(bi, bi_idx) {
@@ -479,7 +466,6 @@ items.forEach(function(item, i) {
     els.push({ type: 't', text: bi, x: textX + 0.20, y: by, w: textW - 0.20, h: 0.35, font: 'B', size: 11, color: 'body', valign: 'middle' });
   });
 
-  // Goal at bottom
   if (item.goal) {
     var goalY = startY + availH - 0.70;
     els.push({ type: 'd', x: textX, y: goalY, w: textW, color: 'ltGray' });
@@ -491,7 +477,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: FROMTO - before/after with large numbers
+// LAYOUT: FROMTO
 // ============================================================
 
 function layoutFromto(cfg) {
@@ -509,7 +495,6 @@ var rtw = rw * C.TEXT_RATIO;
 var rtx = rx + (rw - rtw) / 2;
 var blockH = (availH - C.GAP - 0.40) / 2;
 
-// FROM block
 els.push({ type: 's', x: rx, y: startY, w: rw, h: blockH, fill: 'cardBg', border: isDark ? null : 'cardBorder' });
 els.push({ type: 't', text: 'FROM', x: rtx, y: startY + 0.15, w: rtw, h: 0.20, font: 'H', size: 10, color: 'muted' });
 if (cfg.from) {
@@ -519,11 +504,9 @@ if (cfg.from) {
   }
 }
 
-// Arrow
 var arrowY = startY + blockH + 0.05;
 els.push({ type: 't', text: '\u2193', x: rx + rw / 2 - 0.25, y: arrowY, w: 0.50, h: 0.30, font: 'H', size: 22, color: 'accent', align: 'center' });
 
-// TO block
 var toY = startY + blockH + C.GAP + 0.40;
 var toBlockH = C.CONTENT_END - toY;
 els.push({ type: 's', x: rx, y: toY, w: rw, h: toBlockH, fill: 'accent' });
@@ -535,7 +518,6 @@ if (cfg.to) {
   }
 }
 
-// Left side: description + benefits
 var lx = grid.cols[0].x;
 var lw = grid.cols[0].w;
 var ltw = lw * C.TEXT_RATIO;
@@ -564,7 +546,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: CAPABILITY - matrix grid with column headers
+// LAYOUT: CAPABILITY
 // ============================================================
 
 function layoutCapability(cfg) {
@@ -591,7 +573,6 @@ var cellPad = 0.05;
 var rowUnit = rowCount > 0 ? (dataH - C.GAP * (rowCount - 1)) / rowCount : 1.00;
 var cellH = Math.max(0.35, rowUnit - labelH - cellPad);
 
-// Column headers
 columns.forEach(function(colName, ci) {
   if (ci >= colCount || !grid.cols[ci]) return;
   var cx = grid.cols[ci].x;
@@ -600,7 +581,6 @@ columns.forEach(function(colName, ci) {
   els.push({ type: 't', text: colName, x: cx + 0.15, y: startY, w: cw - 0.30, h: headerRowH, font: 'H', size: 11, color: 'white', valign: 'middle' });
 });
 
-// Data rows
 items.forEach(function(row, ri) {
   var ry = dataStartY + ri * (rowUnit + C.GAP);
 
@@ -624,7 +604,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: SCHEDULE — time-based agenda table
+// LAYOUT: SCHEDULE
 // ============================================================
 
 function layoutSchedule(cfg) {
@@ -649,7 +629,6 @@ var actW = 6.50;
 var whoX = actX + actW + C.GAP;
 var whoW = C.SAFE_W - timeW - actW - C.GAP * 2;
 
-// Column headers
 els.push({ type: 's', x: timeX, y: startY, w: timeW, h: headerH, fill: 'accent' });
 els.push({ type: 't', text: 'TIME', x: timeX + 0.10, y: startY, w: timeW - 0.20, h: headerH, font: 'H', size: 10, color: 'white', valign: 'middle' });
 els.push({ type: 's', x: actX, y: startY, w: actW, h: headerH, fill: 'accent' });
@@ -676,7 +655,7 @@ return els;
 }
 
 // ============================================================
-// NEW LAYOUT: COVERLOC - cover with location and date
+// LAYOUT: COVERLOC
 // ============================================================
 
 function layoutCoverloc(cfg) {
